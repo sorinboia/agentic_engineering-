@@ -8,6 +8,7 @@ Transform a user's initial idea or request into a structured Product Requirement
 
 - **User's original request** — provided in your prompt
 - **Existing knowledge base** (if available) — `knowledge/overview.md`, `knowledge/architecture.md`
+- **Existing product docs** (if available) — `knowledge/product/index.md` and relevant feature files in `knowledge/product/`
 - **Feedback from previous attempt** (if retrying) — provided in your prompt
 
 ## Outputs
@@ -62,17 +63,19 @@ The reviewer and tester agents will use these to evaluate the implementation.
 
 1. **Read the user's request carefully.** Identify what they explicitly asked for and what they implied but didn't state.
 
-2. **Fill in the gaps.** The user's request will often be vague or incomplete. Make reasonable assumptions for anything not specified, but clearly mark assumptions as such. For example: "Assumption: The app will use a web-based UI since no platform was specified."
+2. **Check for existing product docs.** If living product documents exist (`knowledge/product/index.md` and feature files), read them first. Understand what the product already does. Your PRD or feature spec should build on top of existing requirements, not duplicate or contradict them. Reference existing features where relevant and clearly distinguish new requirements from existing ones.
 
-3. **Be specific.** Vague requirements lead to vague implementations. "The app should be fast" is not a requirement. "Pages should load in under 2 seconds on a 4G connection" is.
+3. **Fill in the gaps.** The user's request will often be vague or incomplete. Make reasonable assumptions for anything not specified, but clearly mark assumptions as such. For example: "Assumption: The app will use a web-based UI since no platform was specified."
 
-4. **Think about edge cases.** What happens when the user does something unexpected? What about empty states, error states, large data sets?
+4. **Be specific.** Vague requirements lead to vague implementations. "The app should be fast" is not a requirement. "Pages should load in under 2 seconds on a 4G connection" is.
 
-5. **Consider the full user journey.** Don't just list features — think about how the user flows through them. What's the first thing they see? What's the most common action?
+5. **Think about edge cases.** What happens when the user does something unexpected? What about empty states, error states, large data sets?
 
-6. **Keep scope realistic.** If the user asks for something enormous, scope it down to a reasonable first version and put the rest in "Out of Scope" or "Future Considerations."
+6. **Consider the full user journey.** Don't just list features — think about how the user flows through them. What's the first thing they see? What's the most common action?
 
-7. **Write for the next agent.** The architect and implementer will read this document. Every requirement should be clear enough that someone (or some AI) can implement it without asking you questions.
+7. **Keep scope realistic.** If the user asks for something enormous, scope it down to a reasonable first version and put the rest in "Out of Scope" or "Future Considerations."
+
+8. **Write for the next agent.** The architect and implementer will read this document. Every requirement should be clear enough that someone (or some AI) can implement it without asking you questions.
 
 ## Quality Criteria
 

@@ -13,11 +13,15 @@ Write two types of documentation: **user-facing documentation** (how to use the 
 - **Test Results**: `artifacts/testing/test-results.md`
 - **Source code** — the project directory
 - **Existing knowledge base** (if updating): `knowledge/`
+- **Existing living documents**: `knowledge/product/`, `knowledge/architecture.md`, `knowledge/changelog.md`
 
 ## Outputs
 
 1. **User documentation**: `artifacts/documentation/user-guide.md`
 2. **Knowledge base updates**: files in `knowledge/`
+3. **Product index**: `knowledge/product/index.md` — updated product requirements index
+4. **Feature docs**: `knowledge/product/{feature}.md` — new or updated feature requirement docs
+5. **Changelog entry**: `knowledge/changelog.md` — new entry appended for this run
 
 ### Output Format: user-guide.md
 
@@ -108,7 +112,7 @@ Bugs, technical debt, workarounds, limitations.
 
 ### Knowledge Base
 
-1. **Write for AI agents.** Future agent sessions will read these files to understand the codebase. Be explicit about things that a human might infer from context but an AI needs stated directly.
+1. **Write for AI agents.** Future agent sessions will read these files to understand the codebase. Be explicit about things that a human might infer from context but an AI needs stated directly. Read the existing living documents first. Your job is to MERGE the current run's changes into them, not replace them.
 
 2. **Focus on "what" and "why", not "how".** The code shows how. The knowledge base explains what each part does, why it exists, and how parts relate to each other.
 
@@ -120,6 +124,39 @@ Bugs, technical debt, workarounds, limitations.
 
 6. **Track known issues.** Bugs, limitations, and technical debt go in `known-issues.md`. This prevents future agents from re-discovering the same problems.
 
+### Living Documents
+
+Living documents are cumulative docs that represent the product's CURRENT state. They are the authoritative source of truth for future agent sessions. Getting them wrong means future agents operate with incorrect context. After each run, you MUST merge the run's changes into the living docs.
+
+1. **Product documents (`knowledge/product/`)**
+
+   The cumulative source of truth for all product requirements, organized by feature area.
+
+   - `index.md` lists all feature areas with a one-line summary and a link to each feature doc.
+   - Each feature file (`{feature-name}.md`) contains: overview, requirements, user stories, constraints, and current status.
+   - **On a greenfield run**: Create `index.md` and one or more feature files from the PRD, splitting by logical feature area. Each feature area should be a self-contained document.
+   - **On a feature run**: Create a new feature file for the added feature, or update an existing one if the feature extends existing functionality. Update `index.md` to include the new or changed feature.
+   - **On a bugfix run**: Update the relevant feature file if the bug revealed missing requirements or constraints. Note the fix in the feature file's status or constraints section.
+   - **NEVER delete content from product docs.** Mark deprecated requirements as `[DEPRECATED]` with a reason and date. The product docs are append/update only.
+
+2. **Architecture (`knowledge/architecture.md`)**
+
+   This file already exists in the knowledge base. After each run, verify it reflects the ACTUAL current architecture, not just the initial design. If a feature run introduced new components, changed data flow, or altered the tech stack, update the architecture doc to match reality. The architecture doc must always describe what IS, not what WAS planned.
+
+3. **Changelog (`knowledge/changelog.md`)**
+
+   Append a new entry at the top of the changelog after each run, using this format:
+
+   ```markdown
+   ## {run-id} — {date}
+   **Workflow**: {greenfield|feature|bugfix}
+   **Request**: {user's original request}
+   **Changes**: {bullet list of what changed}
+   **Feature docs affected**: {links to updated product/ files}
+   ```
+
+   The changelog is strictly append-only. Never edit or remove previous entries.
+
 ## Quality Criteria
 
 - User guide includes working setup instructions (copy-pasteable)
@@ -129,3 +166,7 @@ Bugs, technical debt, workarounds, limitations.
 - Conventions are extracted from actual code, not just the architecture document
 - Component docs exist for every major component
 - No stale information in the knowledge base
+- Living product docs (`knowledge/product/`) reflect all requirements from this and previous runs
+- `knowledge/product/index.md` links to every feature doc
+- `knowledge/architecture.md` matches the actual current implementation
+- `knowledge/changelog.md` has an entry for this run

@@ -12,6 +12,8 @@ Write the actual code for the project. You follow the architecture and build wha
 - **Review feedback** (if retrying after review): `artifacts/review/feedback.md`
 - **Test failures** (if retrying after tests): `artifacts/testing/test-results.md`
 - **Existing knowledge base** (if available): `knowledge/conventions.md`, `knowledge/components/`
+- **Living product docs** (if available): `knowledge/product/` — cumulative product requirements
+- **Living architecture** (if available): `knowledge/architecture.md` — cumulative architecture doc
 
 ## Outputs
 

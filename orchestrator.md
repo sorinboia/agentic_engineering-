@@ -89,12 +89,14 @@ If the intent is ambiguous, ask the user to clarify. Do not guess.
 
 ## Executing Steps
 
+When executing any agent, provide it with the path to the shared knowledge base (`.sdlc/knowledge/`). Agents that accept living docs as input (product docs, architecture, changelog) should read them before starting their work. This ensures every agent operates with full context from previous runs.
+
 ### Inline Pattern (Default)
 
 For each workflow step, let `{run-dir}` = `.sdlc/runs/{run-id}/`:
 
 1. **Read the agent definition** — load `agents/{agent-name}.md` from the framework directory
-2. **Read the inputs** — load all input artifacts the step requires. Resolve artifact paths relative to `{run-dir}` (e.g., `artifacts/requirements/prd.md` becomes `{run-dir}/artifacts/requirements/prd.md`). Knowledge paths resolve to `.sdlc/knowledge/`.
+2. **Read the inputs** — load all input artifacts the step requires. Resolve artifact paths relative to `{run-dir}` (e.g., `artifacts/requirements/prd.md` becomes `{run-dir}/artifacts/requirements/prd.md`). Knowledge paths resolve to `.sdlc/knowledge/`. This includes living documents: `knowledge/product/`, `knowledge/architecture.md`, and `knowledge/changelog.md`.
 3. **Follow the agent's instructions** — adopt the role, provide the run directory path, execute every instruction in the agent definition, produce the work product
 4. **Write the outputs** — save all expected output artifacts to their paths under `{run-dir}/artifacts/`
 5. **Update state.json** — mark the step as `completed` with output file paths, or `failed` with error details, in `{run-dir}/state.json`
@@ -236,8 +238,9 @@ After the workflow completes successfully:
 2. Write `.sdlc/runs/{run-id}/telemetry.json` with the full run record
 3. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run
 4. The retrospective and documenter agents write to the **shared** knowledge base at `.sdlc/knowledge/`, not to the run directory. Artifacts go in the run dir; knowledge goes in the shared dir.
-5. If the retrospective produces evolution proposals, present them to the user
-6. Report completion to the user with a summary of what was built
+5. **The documenter agent MUST update the living documents** (product docs in `knowledge/product/`, `knowledge/architecture.md`, and `knowledge/changelog.md`) as the final documentation step. This is not optional — the living docs are the source of truth for future runs. If the documenter step is skipped or fails to update living docs, the run is incomplete.
+6. If the retrospective produces evolution proposals, present them to the user
+7. Report completion to the user with a summary of what was built
 
 ## Framework Location
 

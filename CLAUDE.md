@@ -32,6 +32,9 @@ templates/             Scaffolding copied into an app's .sdlc/ directory on init
   framework_link.md    Config file pointing back to this framework directory
   runs/                Empty directory (populated per-run at runtime; contains a README)
   knowledge/           Knowledge base templates (overview, architecture, conventions, known-issues)
+    product/           Living product requirements directory
+      index.md         Product overview with links to feature docs
+    changelog.md       Chronological log of what changed per run
 ```
 
 ## Framework Source vs App-Specific Files
@@ -41,7 +44,7 @@ This directory is the **framework source**. It contains reusable definitions: or
 When the framework is used on an actual project, it creates a `.sdlc/` directory **inside the app's root**. That directory holds:
 - `framework_link.md` -- points back to this framework directory
 - `runs/` -- per-run isolation directories. Each run creates `runs/{run-id}/` containing `state.json`, `telemetry.json`, and `artifacts/` (organized by phase: requirements, design, implementation, review, testing, documentation, evolution). Multiple runs can execute concurrently without conflict.
-- `knowledge/` -- persistent project knowledge base that agents read and update across runs (shared, not per-run)
+- `knowledge/` -- persistent project knowledge base that agents read and update across runs (shared, not per-run). Includes living documents: `product/` (cumulative requirements by feature area), `architecture.md` (cumulative architecture), and `changelog.md` (chronological run log).
 
 The orchestrator finds the framework by reading `.sdlc/framework_link.md`, then loads workflows and agents from here.
 

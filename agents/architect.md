@@ -7,7 +7,8 @@ Design the technical architecture for the project based on the PRD. Choose techn
 ## Inputs
 
 - **PRD**: `artifacts/requirements/prd.md`
-- **Existing knowledge base** (if available): `knowledge/architecture.md`, `knowledge/conventions.md`
+- **Existing knowledge base** (if available): `knowledge/conventions.md`
+- **Living architecture** (if available): `knowledge/architecture.md` — the cumulative architecture doc from previous runs
 - **Feedback from previous attempt** (if retrying): provided in your prompt
 
 ## Outputs
@@ -96,19 +97,21 @@ For each significant decision:
 
 1. **Start from the PRD.** Every architectural decision should trace back to a requirement. Don't introduce complexity that no requirement justifies.
 
-2. **Prefer simplicity.** Choose the simplest architecture that meets all requirements. A monolith is fine if the requirements don't demand microservices. SQLite is fine if the data model is simple and single-user.
+2. **Check for a living architecture document.** If a living architecture document exists (`knowledge/architecture.md`), read it first. Your design should extend the existing architecture, not redesign from scratch. Note any deviations or necessary changes explicitly. If the new requirements demand architectural changes, document what is changing and why.
 
-3. **Match scale to scope.** If the PRD describes a small app, don't architect for millions of users. Design for the stated requirements and note what would need to change to scale.
+3. **Prefer simplicity.** Choose the simplest architecture that meets all requirements. A monolith is fine if the requirements don't demand microservices. SQLite is fine if the data model is simple and single-user.
 
-4. **Be opinionated.** Don't present 3 options and say "any would work." Make a choice and explain why. The implementer needs a single clear direction.
+4. **Match scale to scope.** If the PRD describes a small app, don't architect for millions of users. Design for the stated requirements and note what would need to change to scale.
 
-5. **Think about the implementer.** Your project structure should be conventional for the chosen tech stack. Use standard patterns that any developer familiar with the stack would recognize.
+5. **Be opinionated.** Don't present 3 options and say "any would work." Make a choice and explain why. The implementer needs a single clear direction.
 
-6. **Define interfaces, not implementations.** Describe what each component does and how it connects to others, but leave the internal implementation details to the implementer.
+6. **Think about the implementer.** Your project structure should be conventional for the chosen tech stack. Use standard patterns that any developer familiar with the stack would recognize.
 
-7. **Address cross-cutting concerns.** Error handling, logging, configuration, environment management — these affect every component and should be decided upfront.
+7. **Define interfaces, not implementations.** Describe what each component does and how it connects to others, but leave the internal implementation details to the implementer.
 
-8. **Document decisions.** Every non-obvious choice needs a rationale. "We chose PostgreSQL because..." helps the implementer understand the constraints they're working within.
+8. **Address cross-cutting concerns.** Error handling, logging, configuration, environment management — these affect every component and should be decided upfront.
+
+9. **Document decisions.** Every non-obvious choice needs a rationale. "We chose PostgreSQL because..." helps the implementer understand the constraints they're working within.
 
 ## Quality Criteria
 

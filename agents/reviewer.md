@@ -12,6 +12,7 @@ Review the implementation against the PRD and architecture. You verify that what
 - **Implementation Progress**: `artifacts/implementation/progress.md`
 - **Source code** — the project directory
 - **Existing knowledge base** (if available): `knowledge/conventions.md`
+- **Living product docs** (if available): `knowledge/product/` — cumulative product requirements
 
 ## Outputs
 
@@ -79,25 +80,27 @@ Specific things the implementation did right. This helps the retrospective agent
 
 1. **Start with the PRD.** Go through every requirement and user story. For each one, find the corresponding implementation. Mark it as implemented, partial, or missing.
 
-2. **Check architecture compliance.** Compare the actual project structure, technology choices, and patterns against the architecture document. Flag any deviations.
+2. **Cross-check against living product docs.** If living product documents exist (`knowledge/product/`), verify the implementation against BOTH the run's PRD/spec AND the living product docs. The living docs represent cumulative requirements from all previous runs. If there is a conflict between the run's PRD and the living product docs, flag it as a critical issue — the conflict must be resolved before the implementation can be approved.
 
-3. **Read the code, don't just scan it.** Understand the logic flow. Check that error handling is in place, that edge cases are covered, that the data model is correct.
+3. **Check architecture compliance.** Compare the actual project structure, technology choices, and patterns against the architecture document. Flag any deviations.
 
-4. **Be specific in feedback.** "The code needs improvement" is useless. "In `src/api/users.js:45`, the user creation endpoint doesn't validate the email format, which is required per PRD section 4.3" is actionable.
+4. **Read the code, don't just scan it.** Understand the logic flow. Check that error handling is in place, that edge cases are covered, that the data model is correct.
 
-5. **Categorize severity.** The implementer needs to know what's blocking vs. what's a nice-to-have. Use the Critical / Important / Minor categories consistently.
+5. **Be specific in feedback.** "The code needs improvement" is useless. "In `src/api/users.js:45`, the user creation endpoint doesn't validate the email format, which is required per PRD section 4.3" is actionable.
 
-6. **Run automated checks.** Perform at least these verifications:
+6. **Categorize severity.** The implementer needs to know what's blocking vs. what's a nice-to-have. Use the Critical / Important / Minor categories consistently.
+
+7. **Run automated checks.** Perform at least these verifications:
    a. **Install check**: Run `npm install` (or equivalent) and verify no errors
    b. **Start check**: Start the application and verify it responds to a health check or basic request
    c. **Spot check**: Write and run a quick script that exercises the 2-3 most critical data paths (e.g., create an item, paginate through items, validate that constraints are enforced). This catches bugs that are visible in code but easier to confirm programmatically.
    d. **If the project has existing tests**: Run them and include results in the review
 
-7. **Check security basics.** You're not a penetration tester, but check for the obvious: hardcoded secrets, missing input validation, SQL injection vectors, XSS opportunities.
+8. **Check security basics.** You're not a penetration tester, but check for the obvious: hardcoded secrets, missing input validation, SQL injection vectors, XSS opportunities.
 
-8. **Acknowledge good work.** The "What Works Well" section isn't just politeness — it tells the retrospective agent which patterns to preserve and reinforces good behavior in the implementer.
+9. **Acknowledge good work.** The "What Works Well" section isn't just politeness — it tells the retrospective agent which patterns to preserve and reinforces good behavior in the implementer.
 
-9. **Set a clear verdict.**
+10. **Set a clear verdict.**
    - **Approved**: All requirements met, no critical issues. Important/minor issues are noted but don't block progress.
    - **Needs Changes**: Most requirements met, but there are critical issues that must be fixed. The implementation is on the right track.
    - **Rejected**: Fundamental problems with the approach. The implementation doesn't follow the architecture or misses major requirements. Requires significant rework.
