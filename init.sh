@@ -136,16 +136,18 @@ You are the orchestrator. Your job is to EXECUTE workflows, not plan them.
 3. Read `config.md` for harness settings and autonomy levels.
 4. Classify the user's intent using the orchestrator's Intent Classification table.
 5. Load the matching workflow from `workflows/` and EXECUTE it:
-   a. For each step: read the agent definition from `agents/`, follow its instructions, write the output artifacts
-   b. Update `.sdlc/state/run.json` after each step
-   c. Respect checkpoint settings (pause for user review where configured)
-   d. Handle errors per the orchestrator's Error Routing table
+   a. Generate a run ID and create `.sdlc/runs/{run-id}/` with artifacts subdirectories
+   b. For each step: read the agent definition from `agents/`, follow its instructions, write output artifacts to the run directory
+   c. Update `.sdlc/runs/{run-id}/state.json` after each step
+   d. Respect checkpoint settings (pause for user review where configured)
+   e. Handle errors per the orchestrator's Error Routing table
 6. After all steps complete, run the retrospective agent.
 
 ## Execution Rules
 
 - Do NOT merely plan or describe what you would do. Produce actual deliverables — real files, real code, real artifacts.
-- Write all artifacts to the paths specified in the workflow (under `.sdlc/artifacts/`).
+- Write all artifacts to the run directory (`.sdlc/runs/{run-id}/artifacts/`).
+- Write shared knowledge updates to `.sdlc/knowledge/` (not the run directory).
 - Execute inline: read each agent definition and perform the work yourself in this session.
 - Follow the full pipeline start to finish. Do not stop after one step.
 
@@ -154,9 +156,10 @@ You are the orchestrator. Your job is to EXECUTE workflows, not plan them.
 | What | Where |
 |---|---|
 | Framework link | `.sdlc/framework_link.md` |
-| Run state | `.sdlc/state/run.json` |
-| Artifacts (agent outputs) | `.sdlc/artifacts/` |
-| Knowledge base | `.sdlc/knowledge/` |
+| Run state | `.sdlc/runs/{run-id}/state.json` |
+| Artifacts (agent outputs) | `.sdlc/runs/{run-id}/artifacts/` |
+| Telemetry | `.sdlc/runs/{run-id}/telemetry.json` |
+| Knowledge base (shared) | `.sdlc/knowledge/` |
 | Workflows | `{framework}/workflows/` |
 | Agent definitions | `{framework}/agents/` |
 | Config | `{framework}/config.md` |

@@ -30,8 +30,8 @@ workflows/             Workflow definitions. Each file is a sequence of steps wi
 
 templates/             Scaffolding copied into an app's .sdlc/ directory on init.
   framework_link.md    Config file pointing back to this framework directory
-  state/               Run state and telemetry templates
-  knowledge/           Empty knowledge base templates (overview, architecture, conventions, known-issues)
+  runs/                Empty directory (populated per-run at runtime; contains a README)
+  knowledge/           Knowledge base templates (overview, architecture, conventions, known-issues)
 ```
 
 ## Framework Source vs App-Specific Files
@@ -40,9 +40,8 @@ This directory is the **framework source**. It contains reusable definitions: or
 
 When the framework is used on an actual project, it creates a `.sdlc/` directory **inside the app's root**. That directory holds:
 - `framework_link.md` -- points back to this framework directory
-- `state/` -- run state (`run.json`) and telemetry per run
-- `artifacts/` -- outputs from each agent organized by phase (requirements, design, implementation, review, testing, documentation, evolution)
-- `knowledge/` -- persistent project knowledge base that agents read and update across runs
+- `runs/` -- per-run isolation directories. Each run creates `runs/{run-id}/` containing `state.json`, `telemetry.json`, and `artifacts/` (organized by phase: requirements, design, implementation, review, testing, documentation, evolution). Multiple runs can execute concurrently without conflict.
+- `knowledge/` -- persistent project knowledge base that agents read and update across runs (shared, not per-run)
 
 The orchestrator finds the framework by reading `.sdlc/framework_link.md`, then loads workflows and agents from here.
 

@@ -1,5 +1,11 @@
 # Feature Workflow
 
+## Paths
+
+All artifact paths in this workflow are relative to the run directory: `.sdlc/runs/{run-id}/`.
+For example, `artifacts/requirements/feature-spec.md` resolves to `.sdlc/runs/{run-id}/artifacts/requirements/feature-spec.md`.
+The knowledge base (`knowledge/`) is shared across runs and lives at `.sdlc/knowledge/`.
+
 ## Trigger
 
 Adding a feature to an existing codebase. The user wants to extend or enhance a project that already has source code, architecture, and a knowledge base.
@@ -104,7 +110,7 @@ Signals: "add", "implement", "new feature", "extend", "enhance", existing codeba
 - **ID**: retrospective
 - **Agent**: retrospective
 - **Depends on**: documentation
-- **Inputs**: `state/telemetry/run-{id}.json`, all artifacts, current framework files
+- **Inputs**: `telemetry.json` (in the run directory), all artifacts, current framework files
 - **Outputs**: `artifacts/evolution/proposal-{date}.md` (if improvements found)
 - **Checkpoint**: true (only if proposals are generated)
 - **On failure**: log and continue (non-blocking)

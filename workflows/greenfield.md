@@ -1,5 +1,11 @@
 # Greenfield Workflow
 
+## Paths
+
+All artifact paths in this workflow are relative to the run directory: `.sdlc/runs/{run-id}/`.
+For example, `artifacts/requirements/prd.md` resolves to `.sdlc/runs/{run-id}/artifacts/requirements/prd.md`.
+The knowledge base (`knowledge/`) is shared across runs and lives at `.sdlc/knowledge/`.
+
 ## Trigger
 
 New project creation — no existing codebase. The user wants to build something from scratch.
@@ -104,7 +110,7 @@ Signals: "create", "build", "new app", "make me a", "start from scratch", empty 
 - **ID**: retrospective
 - **Agent**: retrospective
 - **Depends on**: documentation
-- **Inputs**: `state/telemetry/run-{id}.json`, all artifacts, current framework files
+- **Inputs**: `telemetry.json` (in the run directory), all artifacts, current framework files
 - **Outputs**: `artifacts/evolution/proposal-{date}.md` (if improvements found)
 - **Checkpoint**: true (only if proposals are generated)
 - **On failure**: log and continue (non-blocking)

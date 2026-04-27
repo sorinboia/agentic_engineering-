@@ -6,7 +6,7 @@ Framework files are found differently depending on where you're running:
 
 **From the framework directory itself:** All files (orchestrator, workflows, agents) are local. No path resolution needed.
 
-**From an app project:** Read `.sdlc/framework_link.md` and find the `framework_path:` line. Resolve it relative to `.sdlc/` to get the framework directory. The app's `.sdlc/` holds app-specific files: `state/`, `artifacts/`, `knowledge/`.
+**From an app project:** Read `.sdlc/framework_link.md` and find the `framework_path:` line. Resolve it relative to `.sdlc/` to get the framework directory. The app's `.sdlc/` holds per-run data in `runs/{run-id}/` and the shared knowledge base in `knowledge/`.
 
 ## Harness Adapters
 
@@ -112,16 +112,9 @@ When initializing a new app project, create `.sdlc/` with:
 ```
 .sdlc/
 ├── framework_link.md      # Points to this framework directory
-├── state/
-│   └── telemetry/
-├── artifacts/
-│   ├── requirements/
-│   ├── design/
-│   ├── implementation/
-│   ├── review/
-│   ├── testing/
-│   ├── documentation/
-│   └── evolution/
+├── runs/                  # Empty at init; populated per-run at runtime
+│                          # Each run creates: runs/{run-id}/state.json,
+│                          #   telemetry.json, and artifacts/ subdirectories
 └── knowledge/
     ├── overview.md
     ├── architecture.md

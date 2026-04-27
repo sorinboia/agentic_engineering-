@@ -13,6 +13,8 @@ You are running inside an app project. To locate the framework:
 
 All framework references (agent definitions, workflow files) are relative to that resolved framework directory.
 
+App-specific runtime data is isolated per-run under `.sdlc/runs/{run-id}/`. The shared knowledge base lives at `.sdlc/knowledge/`.
+
 ## How You Work
 
 1. **Classify the user's intent** — read their command and determine which workflow applies
@@ -21,7 +23,7 @@ All framework references (agent definitions, workflow files) are relative to tha
 4. **Monitor outputs** — verify each agent produced its expected output files
 5. **Handle errors** — apply smart error routing (retry, feedback loops, or escalate)
 6. **Manage checkpoints** — pause for user review at configured checkpoint steps
-7. **Track state** — update `state/run.json` after each step for crash recovery
+7. **Track state** — update `.sdlc/runs/{run-id}/state.json` after each step for crash recovery
 8. **Run retrospective** — after workflow completion, trigger the retrospective agent
 
 ## Execution Modes
@@ -52,11 +54,16 @@ See the "Executing Steps" section for the subprocess invocation pattern.
 
 Before executing any workflow steps:
 
-1. **Generate a run ID** using the current timestamp:
+1. **Check for crash recovery** — scan `.sdlc/runs/` for any directory whose `state.json` has `"status": "running"`. If found, follow the Crash Recovery procedure in State Management before starting a new run.
+2. **Generate a run ID** using the current timestamp:
    ```bash
    date -u +%Y%m%dT%H%M%SZ
    ```
-2. **Initialize `state/run.json`** with the run metadata:
+3. **Create the run directory** at `.sdlc/runs/{run-id}/`:
+   ```bash
+   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution}
+   ```
+4. **Initialize `.sdlc/runs/{run-id}/state.json`** with the run metadata:
    ```json
    {
      "run_id": "<generated-id>",
@@ -66,7 +73,7 @@ Before executing any workflow steps:
      "steps": {}
    }
    ```
-3. **Check for crash recovery** — if `state/run.json` already exists with a previous run, follow the Crash Recovery procedure in State Management before starting fresh
+5. **All artifact paths are relative to the run directory.** When the orchestrator adopts an agent role or spawns an agent subprocess, it MUST provide the run directory path (e.g., `.sdlc/runs/{run-id}/`) so the agent writes artifacts to the correct location.
 
 ## Intent Classification
 
@@ -84,13 +91,13 @@ If the intent is ambiguous, ask the user to clarify. Do not guess.
 
 ### Inline Pattern (Default)
 
-For each workflow step:
+For each workflow step, let `{run-dir}` = `.sdlc/runs/{run-id}/`:
 
 1. **Read the agent definition** — load `agents/{agent-name}.md` from the framework directory
-2. **Read the inputs** — load all input artifacts the step requires (file paths from the workflow definition or previous step outputs)
-3. **Follow the agent's instructions** — adopt the role, execute every instruction in the agent definition, produce the work product
-4. **Write the outputs** — save all expected output artifacts to their specified paths
-5. **Update run.json** — mark the step as `completed` with output file paths, or `failed` with error details
+2. **Read the inputs** — load all input artifacts the step requires. Resolve artifact paths relative to `{run-dir}` (e.g., `artifacts/requirements/prd.md` becomes `{run-dir}/artifacts/requirements/prd.md`). Knowledge paths resolve to `.sdlc/knowledge/`.
+3. **Follow the agent's instructions** — adopt the role, provide the run directory path, execute every instruction in the agent definition, produce the work product
+4. **Write the outputs** — save all expected output artifacts to their paths under `{run-dir}/artifacts/`
+5. **Update state.json** — mark the step as `completed` with output file paths, or `failed` with error details, in `{run-dir}/state.json`
 6. **Proceed to the next step** — continue with the next step in the workflow
 
 ### Subprocess Pattern
@@ -107,7 +114,7 @@ When using subprocess mode, construct a prompt and invoke the harness CLI:
 
 **Example for Claude Code:**
 ```bash
-claude -p "You are the PRD Creator agent. Read your role definition at agents/prd-creator.md and follow its instructions. The user's request is: '{user_command}'. Write your output to artifacts/requirements/prd.md." --allowedTools Bash,Read,Write,Edit
+claude -p "You are the PRD Creator agent. Read your role definition at agents/prd-creator.md and follow its instructions. The user's request is: '{user_command}'. The run directory is '.sdlc/runs/{run-id}/'. Write your output to .sdlc/runs/{run-id}/artifacts/requirements/prd.md." --allowedTools Bash,Read,Write,Edit
 ```
 
 ## Parallel Execution
@@ -119,19 +126,28 @@ When a workflow step has no dependency on another pending step, it can run in pa
 3. Wait for all to complete (check for output files)
 4. Proceed to the next batch of ready steps
 
+## Concurrent Runs
+
+Multiple workflow runs can execute simultaneously without conflict:
+
+- Each run has its own directory (`.sdlc/runs/{run-id}/`), state file, and artifacts -- no shared mutable state between runs
+- The knowledge base (`.sdlc/knowledge/`) is shared but append-friendly: agents update it, never delete content
+- If two runs update the same knowledge file concurrently, the last write wins (acceptable for cumulative documentation)
+- Run IDs are timestamp-based, so concurrent runs get distinct directories
+
 ## State Management
 
-Before starting a step, write its status as `running` in `state/run.json`.
+Before starting a step, write its status as `running` in `.sdlc/runs/{run-id}/state.json`.
 After a step completes, write its status as `completed` with output file paths.
 On failure, write `failed` with the error reason and increment the retry counter.
 
 ### Crash Recovery
 
-If `state/run.json` exists when you start:
-1. Read it to determine the current workflow and step statuses
+On startup, scan `.sdlc/runs/` for any directory whose `state.json` has `"status": "running"`. If found:
+1. Read the state file to determine the workflow and step statuses
 2. Skip all `completed` steps
 3. Re-run the last `running` step (it may have crashed mid-execution)
-4. Resume the workflow from there
+4. Resume the workflow from there using that run's directory
 
 ## Error Routing
 
@@ -163,15 +179,15 @@ Record the user's checkpoint action in the run telemetry.
 
 ## Telemetry
 
-Two telemetry files serve different purposes:
+Two files in the run directory serve different purposes:
 
-### `state/run.json` — Live State
+### `.sdlc/runs/{run-id}/state.json` — Live State
 
 This is the **live execution state** used during the run for crash recovery and progress tracking. It is updated after every step. See Run Initialization and State Management for its structure.
 
-### `state/telemetry/run-{id}.json` — Post-Run Data
+### `.sdlc/runs/{run-id}/telemetry.json` — Post-Run Data
 
-This is the **retrospective record** written after the workflow completes (or fails terminally). It captures the full run for analysis by the retrospective agent and for historical tracking.
+This is the **retrospective record** written after the workflow completes (or fails terminally). It captures the full run for analysis by the retrospective agent and for historical tracking. It lives right next to the state file in the run directory.
 
 **You MUST write the telemetry file after every run completes**, whether it succeeded or failed.
 
@@ -216,13 +232,16 @@ Use `date -u +%Y-%m-%dT%H:%M:%SZ` to capture actual timestamps — do not fabric
 
 After the workflow completes successfully:
 
-1. Update `state/run.json` with final status
-2. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run
-3. If the retrospective produces evolution proposals, present them to the user
-4. Report completion to the user with a summary of what was built
+1. Update `.sdlc/runs/{run-id}/state.json` with final status
+2. Write `.sdlc/runs/{run-id}/telemetry.json` with the full run record
+3. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run
+4. The retrospective and documenter agents write to the **shared** knowledge base at `.sdlc/knowledge/`, not to the run directory. Artifacts go in the run dir; knowledge goes in the shared dir.
+5. If the retrospective produces evolution proposals, present them to the user
+6. Report completion to the user with a summary of what was built
 
 ## Framework Location
 
 This framework's source files (workflows, agents, this file) live in the framework directory.
-App-specific files (state, artifacts, knowledge) live in the app's `.sdlc/` directory.
+App-specific runtime data (per-run state, artifacts, telemetry) lives in `.sdlc/runs/{run-id}/`.
+The shared knowledge base lives in `.sdlc/knowledge/`.
 The app's `.sdlc/` links back to this framework — check `config.md` for the linking mechanism.

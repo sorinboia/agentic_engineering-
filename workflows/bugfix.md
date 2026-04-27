@@ -1,5 +1,11 @@
 # Bugfix Workflow
 
+## Paths
+
+All artifact paths in this workflow are relative to the run directory: `.sdlc/runs/{run-id}/`.
+For example, `artifacts/bugfix/analysis.md` resolves to `.sdlc/runs/{run-id}/artifacts/bugfix/analysis.md`.
+The knowledge base (`knowledge/`) is shared across runs and lives at `.sdlc/knowledge/`.
+
 ## Trigger
 
 Fixing a bug in an existing codebase. The user reports something broken, a test failure, an error, or references a known issue.
@@ -66,7 +72,7 @@ Signals: "fix", "bug", "broken", "doesn't work", "error", "crash", "regression",
 - **ID**: retrospective
 - **Agent**: retrospective
 - **Depends on**: documentation
-- **Inputs**: `state/telemetry/run-{id}.json`, all artifacts, current framework files
+- **Inputs**: `telemetry.json` (in the run directory), all artifacts, current framework files
 - **Outputs**: `artifacts/evolution/proposal-{date}.md` (if improvements found)
 - **Checkpoint**: true (only if proposals are generated)
 - **On failure**: log and continue (non-blocking)
