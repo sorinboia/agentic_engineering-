@@ -74,6 +74,16 @@ copy_templates() {
 
 copy_templates "$TEMPLATES_DIR" "$SDLC_DIR"
 
+# --- 2b. Create overrides directory (optional, for project-level customizations) ---
+OVERRIDES_DIR="$SDLC_DIR/overrides"
+if [ -d "$OVERRIDES_DIR" ]; then
+    echo "[skip]   .sdlc/overrides/ already exists"
+else
+    mkdir -p "$OVERRIDES_DIR/agents"
+    echo "[create] .sdlc/overrides/"
+    echo "[create] .sdlc/overrides/agents/"
+fi
+
 # --- 3. Update framework_link.md with the correct path ---
 LINK_FILE="$SDLC_DIR/framework_link.md"
 
@@ -175,4 +185,5 @@ echo "Next steps:"
 echo "  1. Review .sdlc/knowledge/overview.md and fill in your project details"
 echo "  2. Run the orchestrator to start a workflow:"
 echo "     claude -p \"Read CLAUDE.md and follow the framework instructions. Then: <your request>\""
+echo "  3. (Optional) Add project-specific overrides in .sdlc/overrides/"
 echo ""

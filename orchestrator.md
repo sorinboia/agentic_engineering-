@@ -15,6 +15,20 @@ All framework references (agent definitions, workflow files) are relative to tha
 
 App-specific runtime data is isolated per-run under `.sdlc/runs/{run-id}/`. The shared knowledge base lives at `.sdlc/knowledge/`.
 
+## Project Overrides
+
+Before loading any framework file, check if a project-level override exists:
+
+1. Check `.sdlc/overrides/config.md` — if it exists, read it after the framework's `config.md`. Settings in the override take precedence.
+2. Check `.sdlc/overrides/agents/{agent-name}.md` — if it exists for the current agent, read it after the framework's agent definition. Instructions in the override are appended to the framework's instructions.
+
+Override files are optional. If `.sdlc/overrides/` doesn't exist or is empty, use framework defaults.
+
+This lets projects customize behavior without modifying the framework. Examples:
+- A Python project adds "always use type hints" to the implementer override
+- A project with strict accessibility requirements adds checks to the reviewer override
+- A project overrides the default harness in config
+
 ## How You Work
 
 1. **Classify the user's intent** — read their command and determine which workflow applies
@@ -75,6 +89,22 @@ Before executing any workflow steps:
    ```
 5. **All artifact paths are relative to the run directory.** When the orchestrator adopts an agent role or spawns an agent subprocess, it MUST provide the run directory path (e.g., `.sdlc/runs/{run-id}/`) so the agent writes artifacts to the correct location.
 
+## Step Overrides
+
+Before executing each workflow step, the orchestrator checks if the step can be skipped:
+
+1. **Pre-existing artifacts**: If the step's expected output files already exist in the run directory (e.g., the user copied a PRD into `{run-dir}/artifacts/requirements/prd.md` before starting), mark the step as `skipped` and proceed.
+
+2. **User-provided files**: If the user's request references an existing file (e.g., "use the PRD at /path/to/prd.md"), copy it into the run's artifact path, mark the step as `skipped`, and proceed.
+
+3. **Explicit skip instructions**: If the user says "skip testing" or "no need for documentation", mark those steps as `skipped` in state.json and proceed.
+
+Skipped steps:
+- Status in state.json: `"status": "skipped"`
+- Checkpoints are also skipped for skipped steps
+- Downstream steps that depend on a skipped step's outputs will read the pre-existing artifacts
+- The telemetry records skipped steps with `"outcome": "skipped"` and the reason
+
 ## Intent Classification
 
 Read the user's command and classify it into one of these workflows:
@@ -84,6 +114,7 @@ Read the user's command and classify it into one of these workflows:
 | New project | `workflows/greenfield.md` | "create", "build", "new app", "start from scratch", no existing source code |
 | New feature | `workflows/feature.md` | "add", "implement", "new feature", existing codebase present |
 | Bug fix | `workflows/bugfix.md` | "fix", "bug", "broken", "doesn't work", "error", issue reference |
+| Refactoring | `workflows/refactor.md` | "refactor", "clean up", "restructure", "improve code quality", "reduce tech debt", "reorganize" |
 
 If the intent is ambiguous, ask the user to clarify. Do not guess.
 
@@ -136,6 +167,27 @@ Multiple workflow runs can execute simultaneously without conflict:
 - The knowledge base (`.sdlc/knowledge/`) is shared but append-friendly: agents update it, never delete content
 - If two runs update the same knowledge file concurrently, the last write wins (acceptable for cumulative documentation)
 - Run IDs are timestamp-based, so concurrent runs get distinct directories
+
+## Git Integration
+
+The orchestrator manages git as a cross-cutting concern — individual agents don't run git commands.
+
+**Before the first workflow step:**
+- Greenfield workflow: If no git repo exists, run `git init` and create a `.gitignore`
+- Feature workflow: Create a branch `feature/{run-id}` from the current branch
+- Bugfix workflow: Create a branch `fix/{run-id}` from the current branch
+- Refactor workflow: Create a branch `refactor/{run-id}` from the current branch
+
+**After implementation completes (post-review, post-test):**
+- Stage all changed/new files (excluding `.sdlc/`)
+- Commit with a message summarizing the workflow: `"{workflow}: {brief description from PRD/spec}"`
+- Greenfield: this is the initial commit
+- Feature/bugfix/refactor: this commits on the feature branch
+
+**After the full workflow completes (post-documentation):**
+- Stage and commit any documentation or knowledge base changes separately: `"docs: update documentation and knowledge base"`
+
+Git integration respects the `git_integration` setting in `config.md`. If disabled, skip all git operations.
 
 ## State Management
 
@@ -236,11 +288,18 @@ After the workflow completes successfully:
 
 1. Update `.sdlc/runs/{run-id}/state.json` with final status
 2. Write `.sdlc/runs/{run-id}/telemetry.json` with the full run record
-3. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run
-4. The retrospective and documenter agents write to the **shared** knowledge base at `.sdlc/knowledge/`, not to the run directory. Artifacts go in the run dir; knowledge goes in the shared dir.
-5. **The documenter agent MUST update the living documents** (product docs in `knowledge/product/`, `knowledge/architecture.md`, and `knowledge/changelog.md`) as the final documentation step. This is not optional — the living docs are the source of truth for future runs. If the documenter step is skipped or fails to update living docs, the run is incomplete.
-6. If the retrospective produces evolution proposals, present them to the user
-7. Report completion to the user with a summary of what was built
+3. Update the run index at `.sdlc/runs/index.md`. Append a row with: run ID, date, workflow type, user request (truncated to 60 chars), status, steps completed/total, and total retries. If the file doesn't exist, create it with the header row first. The index format:
+   ```markdown
+   # Run History
+
+   | Run ID | Date | Workflow | Request | Status | Steps | Retries |
+   |---|---|---|---|---|---|---|
+   ```
+4. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run. The retrospective agent can read `.sdlc/runs/index.md` for cross-run analysis.
+5. The retrospective and documenter agents write to the **shared** knowledge base at `.sdlc/knowledge/`, not to the run directory. Artifacts go in the run dir; knowledge goes in the shared dir.
+6. **The documenter agent MUST update the living documents** (product docs in `knowledge/product/`, `knowledge/architecture.md`, and `knowledge/changelog.md`) as the final documentation step. This is not optional — the living docs are the source of truth for future runs. If the documenter step is skipped or fails to update living docs, the run is incomplete.
+7. If the retrospective produces evolution proposals, present them to the user
+8. Report completion to the user with a summary of what was built
 
 ## Framework Location
 

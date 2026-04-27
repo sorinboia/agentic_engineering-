@@ -12,6 +12,10 @@ New project creation — no existing codebase. The user wants to build something
 
 Signals: "create", "build", "new app", "make me a", "start from scratch", empty or nonexistent source directory.
 
+## Step Skipping
+
+Any step can be skipped if its expected output artifacts already exist in the run directory before execution begins. The orchestrator detects pre-existing artifacts and marks the step as `skipped`. This allows users to provide their own PRD, architecture, or other artifacts and start the workflow mid-stream.
+
 ---
 
 ## Steps
@@ -145,3 +149,11 @@ This workflow has two feedback loops that can trigger re-execution:
 2. **Testing → Implementation**: If tests fail, the implementer re-runs with the failure details. Capped at 3 cycles.
 
 Both loops share the same retry budget — total retries across both loops cannot exceed the `max_retries_per_step` setting.
+
+## Git Operations
+
+Git is handled by the orchestrator, not by individual agents. The following git operations occur during this workflow (when `git_integration` is enabled in config):
+
+- **Before Step 1**: `git init` if no git repo exists. Create `.gitignore`.
+- **After Step 5 (Testing passes)**: Stage and commit all source code: `"feat: {project name} — initial implementation"`
+- **After Step 6 (Documentation)**: Stage and commit docs + knowledge base changes: `"docs: initial documentation and knowledge base"`

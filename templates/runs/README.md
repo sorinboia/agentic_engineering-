@@ -17,3 +17,7 @@ runs/{run-id}/
 ```
 
 The run ID is a UTC timestamp (e.g., `run-20260427T143022Z`). Each run is fully isolated -- its own state, telemetry, and artifacts. Multiple runs can execute concurrently without conflict.
+
+## Run Index
+
+The file `index.md` in this directory is maintained by the orchestrator. It contains a summary table of all completed runs. The retrospective agent reads this for cross-run analysis.

@@ -12,6 +12,10 @@ Fixing a bug in an existing codebase. The user reports something broken, a test 
 
 Signals: "fix", "bug", "broken", "doesn't work", "error", "crash", "regression", issue reference, stack trace provided.
 
+## Step Skipping
+
+Any step can be skipped if its expected output artifacts already exist in the run directory before execution begins. The orchestrator detects pre-existing artifacts and marks the step as `skipped`. This allows users to provide their own PRD, architecture, or other artifacts and start the workflow mid-stream.
+
 ---
 
 ## Steps
@@ -103,3 +107,11 @@ This workflow has one feedback loop:
 1. **Verification → Fix Implementation**: If the fix introduces regressions or fails to resolve the original bug, the implementer re-runs with the test results. Capped at 3 cycles.
 
 Total retries cannot exceed the `max_retries_per_step` setting.
+
+## Git Operations
+
+Git is handled by the orchestrator, not by individual agents:
+
+- **Before Step 1**: Create branch `fix/{run-id}` from the current branch (when `branch_strategy: feature-branches`)
+- **After Step 3 (Verification passes)**: Stage and commit the fix: `"fix: {bug description from analysis}"`
+- **After Step 4 (Documentation)**: Stage and commit docs + knowledge base changes: `"docs: update documentation for {fix}"`

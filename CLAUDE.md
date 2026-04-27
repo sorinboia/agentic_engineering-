@@ -25,16 +25,19 @@ agents/                One file per agent role. Each defines purpose, inputs, ou
 
 workflows/             Workflow definitions. Each file is a sequence of steps with
                        dependencies, forming a DAG the orchestrator executes.
-  greenfield.md        New project from scratch (only workflow so far; feature.md
-                       and bugfix.md are referenced but not yet created)
+  greenfield.md        New project from scratch
+  refactor.md          Codebase refactoring workflow
 
 templates/             Scaffolding copied into an app's .sdlc/ directory on init.
   framework_link.md    Config file pointing back to this framework directory
-  runs/                Empty directory (populated per-run at runtime; contains a README)
+  runs/                Per-run isolation directories (populated at runtime; contains a README)
+    index.md           Run history summary table maintained by the orchestrator
   knowledge/           Knowledge base templates (overview, architecture, conventions, known-issues)
     product/           Living product requirements directory
       index.md         Product overview with links to feature docs
     changelog.md       Chronological log of what changed per run
+  overrides/           Project-level customization directory (created by init.sh)
+    agents/            Per-project agent instruction overrides
 ```
 
 ## Framework Source vs App-Specific Files
@@ -47,6 +50,14 @@ When the framework is used on an actual project, it creates a `.sdlc/` directory
 - `knowledge/` -- persistent project knowledge base that agents read and update across runs (shared, not per-run). Includes living documents: `product/` (cumulative requirements by feature area), `architecture.md` (cumulative architecture), and `changelog.md` (chronological run log).
 
 The orchestrator finds the framework by reading `.sdlc/framework_link.md`, then loads workflows and agents from here.
+
+## Project Overrides
+
+The `.sdlc/overrides/` directory allows per-project customization of agent instructions and config. Files placed in `overrides/agents/` are read by the orchestrator after the framework's agent definitions, letting projects add domain-specific constraints or modify default behavior without editing the shared framework.
+
+## Git Integration
+
+The orchestrator handles git operations (init, branches, commits) automatically as part of workflow execution. Each run creates a feature branch, commits artifacts at checkpoints, and can merge on completion depending on autonomy settings.
 
 ## Conventions for Agent Definitions
 

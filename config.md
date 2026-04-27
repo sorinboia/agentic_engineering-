@@ -2,6 +2,8 @@
 
 ## Framework Paths
 
+Project-level overrides can be placed in `.sdlc/overrides/`. See the orchestrator's 'Project Overrides' section for details.
+
 Framework files are found differently depending on where you're running:
 
 **From the framework directory itself:** All files (orchestrator, workflows, agents) are local. No path resolution needed.
@@ -64,6 +66,19 @@ default_execution_mode: inline
 Options:
 - `inline` — the orchestrator session acts as all agents sequentially within one session. Default for interactive use.
 - `subprocess` — the orchestrator spawns separate harness CLI sessions per agent. Required for parallel execution across different harnesses or different models per step.
+
+## Git Settings
+
+```
+git_integration: true
+branch_strategy: feature-branches
+```
+
+Options for `branch_strategy`:
+- `feature-branches` — feature/bugfix/refactor workflows create branches. Default.
+- `trunk` — all commits go directly to the current branch. No branch creation.
+
+When `git_integration` is `false`, the orchestrator skips all git operations.
 
 ## Autonomy Settings
 
