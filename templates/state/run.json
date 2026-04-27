@@ -1,0 +1,11 @@
+{
+  "runId": "",
+  "workflow": "",
+  "startedAt": "",
+  "completedAt": "",
+  "userCommand": "",
+  "status": "pending",
+  "steps": {},
+  "checkpointsPending": [],
+  "totalRetries": 0
+}
