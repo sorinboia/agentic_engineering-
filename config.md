@@ -42,11 +42,21 @@ To add a new harness, copy one of the templates above and fill in the command pa
 The `{prompt}` placeholder is replaced with the constructed agent prompt.
 The `{app_root}` placeholder is replaced with the app project's root directory.
 
+A custom harness must:
+- Accept a text prompt as a command-line argument (the `{prompt}` placeholder)
+- Execute in the specified working directory
+- Be able to read files from the project directory and `.sdlc/`
+- Be able to write files to the project directory and `.sdlc/`
+- Exit with code 0 on success, non-zero on failure
+- Complete within the `step_timeout` defined in Error Handling (subprocess mode only)
+
 ## Default Harness
 
 ```
 default_harness: claude-code
 ```
+
+**Note on model selection:** This framework does not configure which AI model to use — that is controlled by the harness itself (e.g., Claude Code's `--model` flag, or the model configured in the Codex CLI). To use different models for different agents, use subprocess mode with `step_harness_overrides` and configure each harness instance's model separately.
 
 ### Per-Step Harness Override
 
@@ -109,8 +119,13 @@ step_autonomy:
 
 ```
 max_retries_per_step: 3
-escalation_threshold: 3    # Escalate after this many total failures in a run
+escalation_threshold: 3    # Escalate the entire run after this many total step failures (across all steps)
+step_timeout: 300          # Seconds. Kill a subprocess agent if it exceeds this. Only applies in subprocess mode.
 ```
+
+- `max_retries_per_step`: Maximum retries for a single step before escalating that step.
+- `escalation_threshold`: Total failure count across ALL steps in a run. When reached, escalate the entire run regardless of per-step retry budgets. See orchestrator's "Escalation Threshold" section.
+- `step_timeout`: Subprocess mode only. If a spawned agent session exceeds this duration, kill it and treat the step as failed. Inline mode is not subject to timeouts (the orchestrator controls its own execution).
 
 ## Self-Evolution Settings
 
@@ -120,6 +135,11 @@ deep_retrospective_every_n_runs: 5
 max_proposals_per_retrospective: 3
 track_proposal_outcomes: true
 ```
+
+- `retrospective_after_each_run`: If true, the retrospective agent runs after every workflow completion. If false, retrospectives are skipped entirely.
+- `deep_retrospective_every_n_runs`: The orchestrator counts completed runs in `.sdlc/runs/index.md`. When the count is a multiple of this value, the retrospective runs in deep mode (analyzing trends across the last N runs). See orchestrator's "Post-Workflow" section.
+- `max_proposals_per_retrospective`: The retrospective agent produces at most this many evolution proposals per run.
+- `track_proposal_outcomes`: If true, the orchestrator logs user decisions (approved/rejected/deferred) for each proposal to `.sdlc/knowledge/decisions/proposal-log.md`. The retrospective agent reads this log to avoid re-proposing rejected changes.
 
 ## App Initialization
 
@@ -135,6 +155,10 @@ When initializing a new app project, create `.sdlc/` with:
     ├── architecture.md
     ├── conventions.md
     ├── components/
-    ├── decisions/
+    ├── decisions/            # Proposal tracking log and ADRs
+    │   └── proposal-log.md   # Created by orchestrator when track_proposal_outcomes is true
+    ├── product/              # Living product requirements
+    │   └── index.md
+    ├── changelog.md
     └── known-issues.md
 ```

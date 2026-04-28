@@ -41,7 +41,7 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 - **Outputs**: `artifacts/review/feedback.md`
 - **Checkpoint**: true
 - **On failure**: escalate
-- **On rejection**: Route feedback to analysis step. Re-run with reviewer's concerns.
+- **On rejection**: Route `artifacts/review/feedback.md` to step `analysis`. Re-run step `analysis` with the reviewer's concerns.
 - **Description**: Review the refactoring plan for safety. Verify the proposed changes won't break existing functionality. Check that the plan aligns with the project's architecture and conventions.
 
 ---
@@ -62,11 +62,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 4: Verify No Regressions
 
 - **ID**: verification
-- **Agent**: tester
+- **Agent**: tester (mode: execution)
 - **Depends on**: refactoring
 - **Inputs**: source code, existing test files
 - **Outputs**: `artifacts/testing/test-results.md`
-- **On failure**: Route test failures to refactoring step. Re-run implementer with failures as input.
+- **Checkpoint**: false
+- **On failure**: Route `artifacts/testing/test-results.md` to step `refactoring`. Re-run step `refactoring` with test failures as input.
 - **Description**: Run the existing test suite. All tests must pass — refactoring should not change behavior. If tests fail, the refactoring introduced a bug. If no tests exist, note this as a gap but do not block.
 
 ---
@@ -78,6 +79,7 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 - **Depends on**: verification
 - **Inputs**: all artifacts, source code, `knowledge/`
 - **Outputs**: `artifacts/documentation/`, `knowledge/`
+- **Checkpoint**: false
 - **On failure**: retry(2), then escalate
 - **Description**: Update the knowledge base to reflect structural changes. Update component docs, architecture doc, and conventions if the refactoring changed them. Append a changelog entry.
 

@@ -54,6 +54,10 @@ You act as all agents sequentially within your own session. For each workflow st
 
 **Important:** Inline mode means you actually do the work. Do NOT merely plan, summarize, or describe what an agent would do. Read the agent definition, follow its instructions, and produce the concrete output files it specifies.
 
+**Parallel steps in inline mode:** When a workflow marks steps as `Parallel with`, execute them sequentially in inline mode. True parallelism only applies in subprocess mode.
+
+**Checkpoints in inline mode:** When a step is marked `Checkpoint: true` and the autonomy setting requires a pause, present the output to the user and wait for their response. If the user's original request implies full autonomous execution (e.g., "build me X" with no request for review), auto-approve checkpoints and record `"checkpoint_action": "auto-approved"` in telemetry.
+
 ### Subprocess Mode
 
 Spawn separate CLI harness sessions for each agent. Use subprocess mode when:
@@ -75,19 +79,55 @@ Before executing any workflow steps:
    ```
 3. **Create the run directory** at `.sdlc/runs/{run-id}/`:
    ```bash
-   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution}
+   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution,bugfix,refactor}
    ```
-4. **Initialize `.sdlc/runs/{run-id}/state.json`** with the run metadata:
+4. **Save the user's original request** verbatim to `.sdlc/runs/{run-id}/request.md`. This preserves the exact input that triggered the workflow for later reference, debugging, and retrospective analysis. Use this format:
+   ```markdown
+   ---
+   run_id: <generated-id>
+   workflow: <workflow-name>
+   created: <ISO 8601 timestamp>
+   ---
+
+   <the user's original request, exactly as provided — no summarization or editing>
+   ```
+
+5. **Initialize `.sdlc/runs/{run-id}/state.json`** with the run metadata:
    ```json
    {
      "run_id": "<generated-id>",
      "workflow": "<workflow-name>",
      "status": "running",
      "started_at": "<actual timestamp from date -u +%Y-%m-%dT%H:%M:%SZ>",
+     "request": "<the user's original request, full text>",
      "steps": {}
    }
    ```
-5. **All artifact paths are relative to the run directory.** When the orchestrator adopts an agent role or spawns an agent subprocess, it MUST provide the run directory path (e.g., `.sdlc/runs/{run-id}/`) so the agent writes artifacts to the correct location.
+   As steps execute, each step entry is added to `"steps"` keyed by step ID:
+   ```json
+   {
+     "steps": {
+       "<step-id>": {
+         "status": "pending | running | completed | failed | skipped",
+         "agent": "<agent-name>",
+         "started_at": "<ISO 8601 timestamp | null>",
+         "completed_at": "<ISO 8601 timestamp | null>",
+         "outputs": ["<file-path>"],
+         "retries": 0,
+         "error": "<error message | null>",
+         "skip_reason": "<reason | null>"
+       }
+     }
+   }
+   ```
+   Valid `status` transitions: `pending → running → completed`, `pending → running → failed`, `pending → skipped`. A `failed` step can transition back to `running` on retry.
+
+   When the run ends, set the top-level `"status"` to one of: `"completed"`, `"failed"`, or `"escalated"`, and add a `"completed_at"` timestamp.
+
+5. **Path conventions:**
+   - **Artifact paths** are relative to the run directory (`{run-dir}`). Example: `artifacts/requirements/prd.md` → `.sdlc/runs/{run-id}/artifacts/requirements/prd.md`.
+   - **Knowledge paths** are relative to `.sdlc/knowledge/`. Example: `knowledge/architecture.md` → `.sdlc/knowledge/architecture.md`.
+   - **The project root** (also called "the app root" or "the project directory") is the directory that contains `.sdlc/`. This is where source code lives. When agents write source code or test files, they write to the project root, following the directory structure defined in the architecture document. The orchestrator MUST provide the project root path to agents that write source code (implementer, tester). When the orchestrator adopts an agent role or spawns an agent subprocess, it MUST provide the run directory path (e.g., `.sdlc/runs/{run-id}/`) so the agent writes artifacts to the correct location.
 
 ## Step Overrides
 
@@ -103,7 +143,7 @@ Skipped steps:
 - Status in state.json: `"status": "skipped"`
 - Checkpoints are also skipped for skipped steps
 - Downstream steps that depend on a skipped step's outputs will read the pre-existing artifacts
-- The telemetry records skipped steps with `"outcome": "skipped"` and the reason
+- Telemetry records skipped steps with `"status": "skipped"` and a `"skip_reason"` field explaining why (e.g., "pre-existing artifact", "user-provided file", "user requested skip")
 
 ## Intent Classification
 
@@ -144,6 +184,13 @@ When using subprocess mode, construct a prompt and invoke the harness CLI:
    - Any feedback from previous attempts (if retrying)
 
 2. Invoke the configured harness CLI. Read `config.md` for the harness adapter command template.
+
+3. **Detect subprocess failure.** After the subprocess exits, verify success using all three checks:
+   - **Exit code**: A non-zero exit code means the harness session failed. Log the exit code and treat the step as failed.
+   - **Timeout**: If the subprocess exceeds the `step_timeout` configured in `config.md`, kill it and treat the step as failed with reason "timeout".
+   - **Output verification**: Check that all expected output files listed in the step's `Outputs` field exist and are non-empty. Missing or empty outputs mean the agent did not complete its work — treat as failed.
+
+   If any check fails, follow the normal error routing (retry or escalate).
 
 **Example for Claude Code:**
 ```bash
@@ -197,9 +244,11 @@ On failure, write `failed` with the error reason and increment the retry counter
 
 ### Crash Recovery
 
-On startup, scan `.sdlc/runs/` for any directory whose `state.json` has `"status": "running"`. If found:
+On startup, scan `.sdlc/runs/` for any directory whose `state.json` has `"status": "running"`. If multiple crashed runs are found, recover the most recent one (highest run ID, which is timestamp-based). Present the other crashed runs to the user and ask whether to resume, mark as failed, or ignore each one.
+
+For the run being recovered:
 1. Read the state file to determine the workflow and step statuses
-2. Skip all `completed` steps
+2. Skip all `completed` and `skipped` steps
 3. Re-run the last `running` step (it may have crashed mid-execution)
 4. Resume the workflow from there using that run's directory
 
@@ -218,6 +267,10 @@ When escalating, present:
 - What was attempted (including retries)
 - The agent's output (if any)
 - A suggested path forward
+
+### Escalation Threshold
+
+The `escalation_threshold` setting in `config.md` caps the **total** number of failures across all steps in a single run. Track a running count of all step failures (each failed attempt increments the count, even if the step is retried successfully afterward). When the count reaches the threshold, escalate the entire run to the user regardless of per-step retry budgets. This prevents a run from burning through retries across many steps without human oversight.
 
 ## Checkpoint Handling
 
@@ -252,6 +305,7 @@ Use `date -u +%Y-%m-%dT%H:%M:%SZ` to capture actual timestamps — do not fabric
 {
   "run_id": "<id>",
   "workflow": "<workflow-name>",
+  "request": "<the user's original request, full text>",
   "status": "completed | failed | escalated",
   "started_at": "<ISO 8601 timestamp from date>",
   "completed_at": "<ISO 8601 timestamp from date>",
@@ -260,6 +314,7 @@ Use `date -u +%Y-%m-%dT%H:%M:%SZ` to capture actual timestamps — do not fabric
       "step": "<step-name>",
       "agent": "<agent-name>",
       "status": "completed | failed | skipped",
+      "skip_reason": "<reason if skipped, null otherwise>",
       "started_at": "<ISO 8601 timestamp>",
       "completed_at": "<ISO 8601 timestamp>",
       "retries": 0,
@@ -295,10 +350,14 @@ After the workflow completes successfully:
    | Run ID | Date | Workflow | Request | Status | Steps | Retries |
    |---|---|---|---|---|---|---|
    ```
-4. Trigger the retrospective agent (`agents/retrospective.md`) to analyze the run. The retrospective agent can read `.sdlc/runs/index.md` for cross-run analysis.
+4. **Trigger the retrospective agent.** Determine whether this is a standard or deep retrospective:
+   - Count the number of completed runs in `.sdlc/runs/index.md` (rows in the table).
+   - If the count is a multiple of `deep_retrospective_every_n_runs` (from `config.md`), invoke the retrospective agent with `trigger: periodic-deep` and pass it telemetry from the last N runs.
+   - Otherwise, invoke the standard after-run retrospective with `trigger: after-run` and pass only the current run's telemetry.
+   - The retrospective agent can read `.sdlc/runs/index.md` for cross-run analysis.
 5. The retrospective and documenter agents write to the **shared** knowledge base at `.sdlc/knowledge/`, not to the run directory. Artifacts go in the run dir; knowledge goes in the shared dir.
 6. **The documenter agent MUST update the living documents** (product docs in `knowledge/product/`, `knowledge/architecture.md`, and `knowledge/changelog.md`) as the final documentation step. This is not optional — the living docs are the source of truth for future runs. If the documenter step is skipped or fails to update living docs, the run is incomplete.
-7. If the retrospective produces evolution proposals, present them to the user
+7. If the retrospective produces evolution proposals, present them to the user for approval. **Track proposal outcomes** (when `track_proposal_outcomes: true` in `config.md`): record whether each proposal was approved, rejected, or deferred by appending to `.sdlc/knowledge/decisions/proposal-log.md`. Include the proposal file path, the user's decision, and the date. This log is read by the retrospective agent on future runs to avoid re-proposing rejected changes and to evaluate whether applied changes had the expected impact.
 8. Report completion to the user with a summary of what was built
 
 ## Framework Location

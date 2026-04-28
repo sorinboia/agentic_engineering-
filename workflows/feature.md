@@ -61,11 +61,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 3b: Write Test Plan
 
 - **ID**: test-planning
-- **Agent**: tester
+- **Agent**: tester (mode: planning)
 - **Depends on**: design-review
 - **Inputs**: `artifacts/requirements/feature-spec.md`, `artifacts/design/feature-design.md`, `knowledge/architecture.md`, existing test suites
 - **Outputs**: `artifacts/testing/test-plan.md`
 - **Parallel with**: implementation
+- **Checkpoint**: false
 - **On failure**: retry(2), then escalate
 - **Description**: Design a test plan covering the new feature and regression tests for areas affected by the change. Identify existing tests that may need updating. Runs in parallel with implementation.
 
@@ -78,8 +79,9 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 - **Depends on**: implementation
 - **Inputs**: `artifacts/requirements/feature-spec.md`, `artifacts/design/feature-design.md`, `artifacts/implementation/progress.md`, source code, `knowledge/conventions.md`
 - **Outputs**: `artifacts/review/feedback.md`
+- **Checkpoint**: false
 - **On failure**: escalate
-- **On rejection**: Route `artifacts/review/feedback.md` back to implementation step as additional input. Re-run implementer with the feedback.
+- **On rejection**: Route `artifacts/review/feedback.md` to step `implementation` as additional input. Re-run step `implementation` with the feedback.
 - **Description**: Review the implementation against the feature spec and design. Verify it integrates cleanly with the existing codebase, follows conventions, and does not introduce regressions or break existing interfaces.
 
 ---
@@ -87,11 +89,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 5: Run Tests
 
 - **ID**: testing
-- **Agent**: tester
+- **Agent**: tester (mode: execution)
 - **Depends on**: implementation, test-planning
 - **Inputs**: source code, `artifacts/testing/test-plan.md`, existing test suites
 - **Outputs**: `artifacts/testing/test-results.md`
-- **On failure**: Route `artifacts/testing/test-results.md` to implementation step. Re-run implementer with test failures as input.
+- **Checkpoint**: false
+- **On failure**: Route `artifacts/testing/test-results.md` to step `implementation`. Re-run step `implementation` with test failures as input.
 - **Description**: Write and execute new feature tests and regression tests from the test plan. Run the full existing test suite to verify nothing is broken. Report results including coverage, new test count, and any regressions.
 
 ---

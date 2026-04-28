@@ -86,9 +86,11 @@ Each file in `workflows/` defines an ordered sequence of steps forming a depende
 
 Optional but common fields:
 - **Depends on** -- step IDs that must complete first.
-- **Checkpoint** -- `true` if the orchestrator should pause for user review (subject to autonomy settings in `config.md`).
+- **Checkpoint** -- `true` if the orchestrator should pause for user review (subject to autonomy settings in `config.md`). Must be declared on every step (use `false` if no checkpoint is needed).
 - **Parallel with** -- step ID this step can run concurrently with.
 - **Description** -- human-readable explanation of the step's purpose.
+- **Special instructions** -- mode-specific prompt text for agents that support multiple modes (e.g., implementer in analysis mode). The orchestrator appends this to the agent's prompt.
+- **On rejection** -- how to handle reviewer rejection (distinct from failure). Typically routes feedback back to a prior step by step ID for re-execution.
 
 Workflows should also include:
 - A **dependency graph** (ASCII diagram).

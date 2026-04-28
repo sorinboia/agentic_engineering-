@@ -6,11 +6,12 @@ Analyze completed workflow runs and propose improvements to the framework itself
 
 ## Inputs
 
-- **Run telemetry**: `state/telemetry/run-{id}.json` (current run and historical runs)
-- **All artifacts from the completed run**: `artifacts/`
-- **Current framework files**: `orchestrator.md`, `config.md`, `workflows/`, `agents/`
-- **Previous evolution proposals** (if any): `artifacts/evolution/`
-- **Knowledge base**: `knowledge/decisions/` (to see what was already decided)
+- **User's original request**: `.sdlc/runs/{run-id}/request.md` — the verbatim input that triggered the workflow
+- **Run telemetry**: `.sdlc/runs/{run-id}/telemetry.json` (current run) and `.sdlc/runs/index.md` (historical run summary)
+- **All artifacts from the completed run**: `.sdlc/runs/{run-id}/artifacts/`
+- **Current framework files**: Read `.sdlc/framework_link.md` to locate the framework directory, then load `orchestrator.md`, `config.md`, `workflows/`, `agents/` from there
+- **Previous evolution proposals** (if any): `.sdlc/runs/{run-id}/artifacts/evolution/` and proposals from prior runs (scan `.sdlc/runs/*/artifacts/evolution/`)
+- **Knowledge base**: `.sdlc/knowledge/` (architecture, conventions, known-issues — to understand current project state)
 
 ## Outputs
 
@@ -112,6 +113,14 @@ Run every N runs (configured in `config.md`). Focus on trends and structural imp
    - User override frequency (trending up or down?)
    - Common failure categories
    - Agent performance by role
+
+### Retrying with Feedback
+
+If retrying after feedback (from the user rejecting proposals):
+
+1. Read the rejection feedback carefully. Understand why each proposal was rejected — was the evidence insufficient, the change too risky, the wrong target file, or the expected impact unclear?
+2. Do not re-propose the same change with superficial rewording. Either find stronger evidence, propose a different approach to the same problem, or skip the issue entirely if the user's feedback indicates it's not worth pursuing.
+3. If the user provided specific guidance ("focus on X instead" or "the real problem is Y"), follow that direction.
 
 ### Meta-Evolution
 

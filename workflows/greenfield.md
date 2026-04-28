@@ -61,11 +61,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 3b: Write Test Plan
 
 - **ID**: test-planning
-- **Agent**: tester
+- **Agent**: tester (mode: planning)
 - **Depends on**: architecture
 - **Inputs**: `artifacts/requirements/prd.md`, `artifacts/design/architecture.md`
 - **Outputs**: `artifacts/testing/test-plan.md`
 - **Parallel with**: implementation
+- **Checkpoint**: false
 - **On failure**: retry(2), then escalate
 - **Description**: Design the test strategy and write a detailed test plan based on the requirements and architecture. Runs in parallel with implementation.
 
@@ -78,8 +79,9 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 - **Depends on**: implementation
 - **Inputs**: `artifacts/requirements/prd.md`, `artifacts/design/architecture.md`, `artifacts/implementation/progress.md`, source code
 - **Outputs**: `artifacts/review/feedback.md`
+- **Checkpoint**: false
 - **On failure**: escalate
-- **On rejection**: Route `artifacts/review/feedback.md` back to implementation step as additional input. Re-run implementer with the feedback.
+- **On rejection**: Route `artifacts/review/feedback.md` to step `implementation` as additional input. Re-run step `implementation` with the feedback.
 - **Description**: Review the implementation against the PRD and architecture. Check for correctness, completeness, code quality, and security.
 
 ---
@@ -87,11 +89,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 5: Run Tests
 
 - **ID**: testing
-- **Agent**: tester
+- **Agent**: tester (mode: execution)
 - **Depends on**: implementation, test-planning
 - **Inputs**: source code, `artifacts/testing/test-plan.md`
 - **Outputs**: `artifacts/testing/test-results.md`
-- **On failure**: Route `artifacts/testing/test-results.md` to implementation step. Re-run implementer with test failures as input.
+- **Checkpoint**: false
+- **On failure**: Route `artifacts/testing/test-results.md` to step `implementation`. Re-run step `implementation` with test failures as input.
 - **Description**: Write and execute tests based on the test plan. Report results including coverage and any failures.
 
 ---
@@ -154,6 +157,6 @@ Both loops share the same retry budget — total retries across both loops canno
 
 Git is handled by the orchestrator, not by individual agents. The following git operations occur during this workflow (when `git_integration` is enabled in config):
 
-- **Before Step 1**: `git init` if no git repo exists. Create `.gitignore`.
+- **Before Step 1**: `git init` if no git repo exists. Create `.gitignore`. Note: the implementer should add tech-stack-appropriate entries (e.g., `node_modules/`, `__pycache__/`, `.venv/`) during implementation, since the framework's init template only covers `.sdlc/runs/` exclusions.
 - **After Step 5 (Testing passes)**: Stage and commit all source code: `"feat: {project name} — initial implementation"`
 - **After Step 6 (Documentation)**: Stage and commit docs + knowledge base changes: `"docs: initial documentation and knowledge base"`

@@ -157,6 +157,15 @@ Living documents are cumulative docs that represent the product's CURRENT state.
 
    The changelog is strictly append-only. Never edit or remove previous entries.
 
+### Retrying with Feedback
+
+If retrying after feedback (from the user or orchestrator):
+
+1. Read the feedback provided in your prompt carefully. Common issues include: inaccurate setup instructions, missing feature coverage in the user guide, stale knowledge base entries, or incomplete living document updates.
+2. Address every issue raised. Revise the specific documents that were flagged — do not rewrite all documentation from scratch.
+3. Re-verify that living documents (product docs, architecture, changelog) are still accurate after your revisions.
+4. Note which feedback items were addressed and how.
+
 ## Quality Criteria
 
 - User guide includes working setup instructions (copy-pasteable)

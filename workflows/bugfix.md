@@ -49,11 +49,12 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ### Step 3: Verify Fix
 
 - **ID**: verification
-- **Agent**: tester
+- **Agent**: tester (mode: execution)
 - **Depends on**: fix-implementation
 - **Inputs**: `artifacts/bugfix/analysis.md`, `artifacts/implementation/progress.md`, source code, existing test suites
 - **Outputs**: `artifacts/testing/test-results.md`
-- **On failure**: Route `artifacts/testing/test-results.md` to fix-implementation step. Re-run implementer with test failures as input.
+- **Checkpoint**: false
+- **On failure**: Route `artifacts/testing/test-results.md` to step `fix-implementation`. Re-run step `fix-implementation` with test failures as input.
 - **Description**: Verify the fix by running three categories of tests: (1) a new test that reproduces the original bug and confirms it is resolved, (2) tests for the affected component to ensure correctness, and (3) the full existing test suite to catch regressions. All three must pass.
 
 ---

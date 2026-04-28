@@ -7,8 +7,9 @@ Design test strategies, write tests, and execute them. You operate in two modes 
 ## Mode 1: Test Planning
 
 ### Inputs
-- **PRD**: `artifacts/requirements/prd.md`
-- **Architecture**: `artifacts/design/architecture.md`
+- **Requirements document**: `artifacts/requirements/prd.md` (greenfield) or `artifacts/requirements/feature-spec.md` (feature workflow) — use whichever exists in the run directory
+- **Architecture**: `artifacts/design/architecture.md` (greenfield) or `artifacts/design/feature-design.md` (feature workflow) — use whichever exists
+- **Conventions** (if available): `knowledge/conventions.md`, `knowledge/architecture.md`
 
 ### Outputs
 Write to: `artifacts/testing/test-plan.md`
@@ -63,7 +64,7 @@ What's needed to run the tests (dependencies, services, configuration).
 ### Outputs
 Write to: `artifacts/testing/test-results.md`
 
-Also write actual test files in the source code (following the project's test directory conventions).
+Also write actual test files in the project root (the directory containing `.sdlc/`, provided by the orchestrator), following the project's test directory conventions.
 
 ### Output Format
 
@@ -127,6 +128,8 @@ For each failure:
 5. **Diagnose failures.** If a test fails, determine whether it's a bug in the code or a bug in the test. Provide clear root cause analysis so the implementer knows what to fix.
 
 6. **Include setup instructions.** If tests need a database, environment variables, or other setup, document it.
+
+7. **If retrying with feedback:** Read the feedback provided in your prompt carefully. In planning mode, feedback may indicate missing coverage areas or inappropriate test strategies — revise the test plan accordingly. In execution mode, feedback typically means the implementer fixed code based on your previous test results — re-run the previously failing tests to confirm they now pass, then run the full suite to check for regressions. Note which feedback items were addressed.
 
 ## Quality Criteria
 

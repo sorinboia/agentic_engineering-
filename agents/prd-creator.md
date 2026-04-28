@@ -77,6 +77,8 @@ The reviewer and tester agents will use these to evaluate the implementation.
 
 8. **Write for the next agent.** The architect and implementer will read this document. Every requirement should be clear enough that someone (or some AI) can implement it without asking you questions.
 
+9. **If retrying with feedback:** Read the feedback provided in your prompt carefully. It may come from the user (checkpoint rejection) or from a downstream agent (architect or reviewer flagging requirement gaps). Address every issue raised. In your output, note which feedback items were addressed and how. Do not discard valid work from the previous attempt — revise and improve, don't restart from scratch.
+
 ## Quality Criteria
 
 - Every requirement must be testable — if you can't describe how to verify it, it's too vague

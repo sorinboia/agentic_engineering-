@@ -29,6 +29,22 @@ APP_DIR="$(cd "$APP_DIR" 2>/dev/null && pwd)" || {
 SDLC_DIR="$APP_DIR/.sdlc"
 TEMPLATES_DIR="$FRAMEWORK_DIR/templates"
 
+# --- Safety guards ---
+# Prevent initializing the framework directory itself
+if [ "$APP_DIR" = "$FRAMEWORK_DIR" ]; then
+    echo "Error: cannot initialize inside the framework directory itself." >&2
+    echo "  Framework dir: $FRAMEWORK_DIR" >&2
+    echo "  Run this script with a path to your app project, e.g.: ./init.sh /path/to/my-app" >&2
+    exit 1
+fi
+
+# Verify templates directory exists
+if [ ! -d "$TEMPLATES_DIR" ]; then
+    echo "Error: templates directory not found at $TEMPLATES_DIR" >&2
+    echo "  The framework installation may be incomplete." >&2
+    exit 1
+fi
+
 echo "SDLC Agent Framework — Project Init"
 echo "===================================="
 echo "Framework : $FRAMEWORK_DIR"
@@ -126,6 +142,11 @@ if grep -q "^framework_path:" "$LINK_FILE" 2>/dev/null; then
         fi
         echo "[update] framework_link.md -> $REL_FRAMEWORK_PATH"
     fi
+else
+    echo "[warn]   framework_link.md is missing the 'framework_path:' line — file may be corrupted" >&2
+    echo "         Appending the correct path..."
+    echo "framework_path: $REL_FRAMEWORK_PATH" >> "$LINK_FILE"
+    echo "[fix]    framework_link.md -> $REL_FRAMEWORK_PATH"
 fi
 
 # --- 4. Create CLAUDE.md in the app root ---
@@ -175,6 +196,22 @@ You are the orchestrator. Your job is to EXECUTE workflows, not plan them.
 | Config | `{framework}/config.md` |
 CLAUDE_EOF
     echo "[create] CLAUDE.md"
+fi
+
+# --- 5. Add .gitignore guidance for .sdlc/runs/ ---
+GITIGNORE="$APP_DIR/.gitignore"
+RUNS_PATTERN=".sdlc/runs/*/artifacts/"
+if [ -f "$GITIGNORE" ] && grep -qF "$RUNS_PATTERN" "$GITIGNORE" 2>/dev/null; then
+    echo "[skip]   .gitignore already has .sdlc/runs/ pattern"
+else
+    {
+        echo ""
+        echo "# SDLC Agent Framework — run artifacts (may contain sensitive data)"
+        echo ".sdlc/runs/*/artifacts/"
+        echo ".sdlc/runs/*/state.json"
+        echo ".sdlc/runs/*/telemetry.json"
+    } >> "$GITIGNORE"
+    echo "[update] .gitignore — added .sdlc/runs/ exclusion patterns"
 fi
 
 # --- Done ---

@@ -113,6 +113,8 @@ For each significant decision:
 
 9. **Document decisions.** Every non-obvious choice needs a rationale. "We chose PostgreSQL because..." helps the implementer understand the constraints they're working within.
 
+10. **If retrying with feedback:** Read the feedback provided in your prompt carefully. It may come from the user (checkpoint rejection) or from the reviewer (flagging architectural issues during implementation review). Address every issue raised — update the architecture and tech decisions documents accordingly. Note which feedback items were addressed and how. Preserve valid decisions from the previous attempt; only revise what the feedback specifically targets.
+
 ## Quality Criteria
 
 - Tech stack is appropriate for the requirements (not over- or under-engineered)

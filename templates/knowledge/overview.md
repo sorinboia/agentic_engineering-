@@ -4,16 +4,24 @@
 
 ## What This Project Does
 
-{To be filled by the documenter agent after the first run}
+<!-- The documenter agent fills this in after the first run. Describe in 2-3 sentences what the project does and what problem it solves. -->
 
 ## Who It's For
 
-{Target users/audience}
+<!-- Target users or audience. E.g., "Internal developers managing deployment pipelines." -->
+
+## Tech Stack Summary
+
+<!-- Primary language(s), framework(s), and data store. E.g., "Python 3.11 + FastAPI + PostgreSQL." -->
+
+## Entry Points
+
+<!-- How to start the app. E.g., "Run `python -m myapp` or `docker compose up`." -->
 
 ## Key Features
 
-{List of main features}
+<!-- Bullet list of the main capabilities. Populated and updated by the documenter agent. -->
 
 ## Current Status
 
-{Active development / Maintenance / etc.}
+<!-- One of: Active development / Maintenance / Deprecated -->
