@@ -125,6 +125,16 @@ By default, the framework pauses at checkpoint steps (PRD and Architecture) for 
 
 **Steps:** Configure Project (interview) → Validate Configuration
 
+### Import — Onboard an existing project
+
+```
+"Import the project at /path/to/my-app"
+"Adopt the codebase at ../legacy-api into the framework"
+"Bring in the existing project so I can continue with the framework"
+```
+
+**Steps:** Discovery (scan source) → Analysis (extract architecture, requirements, conventions) → Knowledge Population (write to knowledge base) → Retrospective
+
 ## What Gets Produced
 
 Every workflow run creates:
@@ -172,6 +182,7 @@ my-app/
 | Documenter | `agents/documenter.md` | Writes user docs and maintains the living knowledge base |
 | Retrospective | `agents/retrospective.md` | Analyzes the run and proposes framework improvements |
 | Configurator | `agents/configurator.md` | Interviews you about project specifics and generates agent overrides |
+| Importer | `agents/importer.md` | Analyzes an external codebase and populates the knowledge base |
 
 ## Configuration
 
@@ -310,13 +321,15 @@ sdlc-framework/
 │   ├── tester.md                # Test planning + execution
 │   ├── documenter.md            # Documentation + knowledge base
 │   ├── retrospective.md         # Self-improvement
-│   └── configurator.md          # Project configuration interview
+│   ├── configurator.md          # Project configuration interview
+│   └── importer.md              # Analyze external codebase for import
 ├── workflows/
 │   ├── greenfield.md            # New project from scratch
 │   ├── feature.md               # Add to existing project
 │   ├── bugfix.md                # Diagnose and fix
 │   ├── refactor.md              # Restructure without behavior change
-│   └── configure.md             # Project-specific agent configuration
+│   ├── configure.md             # Project-specific agent configuration
+│   └── import.md                # Import existing project into the framework
 └── templates/                   # Scaffolding copied into projects by init.sh
     ├── framework_link.md
     ├── runs/

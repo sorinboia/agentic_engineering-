@@ -79,7 +79,7 @@ Before executing any workflow steps:
    ```
 3. **Create the run directory** at `.sdlc/runs/{run-id}/`:
    ```bash
-   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution,bugfix,refactor,configuration}
+   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution,bugfix,refactor,configuration,import}
    ```
 4. **Save the user's original request** verbatim to `.sdlc/runs/{run-id}/request.md`. This preserves the exact input that triggered the workflow for later reference, debugging, and retrospective analysis. Use this format:
    ```markdown
@@ -156,6 +156,7 @@ Read the user's command and classify it into one of these workflows:
 | Bug fix | `workflows/bugfix.md` | "fix", "bug", "broken", "doesn't work", "error", issue reference |
 | Refactoring | `workflows/refactor.md` | "refactor", "clean up", "restructure", "improve code quality", "reduce tech debt", "reorganize" |
 | Configuration | `workflows/configure.md` | "configure", "setup", "set up", "customize", "set conventions", "project settings", "set coding standards" |
+| Import existing project | `workflows/import.md` | "import", "adopt", "onboard", "bring in", "migrate from", "point to existing", path to external directory provided |
 
 If the intent is ambiguous, ask the user to clarify. Do not guess.
 
@@ -226,12 +227,14 @@ The orchestrator manages git as a cross-cutting concern — individual agents do
 - Bugfix workflow: Create a branch `fix/{run-id}` from the current branch
 - Refactor workflow: Create a branch `refactor/{run-id}` from the current branch
 - Configure workflow: No branch — override files commit directly to the current branch
+- Import workflow: Create a branch `import/{run-id}` from the current branch
 
 **After implementation completes (post-review, post-test):**
 - Stage all changed/new files (excluding `.sdlc/`)
 - Commit with a message summarizing the workflow: `"{workflow}: {brief description from PRD/spec}"`
 - Greenfield: this is the initial commit
 - Feature/bugfix/refactor: this commits on the feature branch
+- Import: no source code commit (source is read-only). After knowledge population, stage and commit knowledge base files: `"chore: import project knowledge from {source-path}"`
 
 **After the full workflow completes (post-documentation):**
 - Stage and commit any documentation or knowledge base changes separately: `"docs: update documentation and knowledge base"`
