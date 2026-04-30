@@ -79,7 +79,7 @@ Before executing any workflow steps:
    ```
 3. **Create the run directory** at `.sdlc/runs/{run-id}/`:
    ```bash
-   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution,bugfix,refactor}
+   mkdir -p .sdlc/runs/{run-id}/artifacts/{requirements,design,implementation,review,testing,documentation,evolution,bugfix,refactor,configuration}
    ```
 4. **Save the user's original request** verbatim to `.sdlc/runs/{run-id}/request.md`. This preserves the exact input that triggered the workflow for later reference, debugging, and retrospective analysis. Use this format:
    ```markdown
@@ -155,6 +155,7 @@ Read the user's command and classify it into one of these workflows:
 | New feature | `workflows/feature.md` | "add", "implement", "new feature", existing codebase present |
 | Bug fix | `workflows/bugfix.md` | "fix", "bug", "broken", "doesn't work", "error", issue reference |
 | Refactoring | `workflows/refactor.md` | "refactor", "clean up", "restructure", "improve code quality", "reduce tech debt", "reorganize" |
+| Configuration | `workflows/configure.md` | "configure", "setup", "set up", "customize", "set conventions", "project settings", "set coding standards" |
 
 If the intent is ambiguous, ask the user to clarify. Do not guess.
 
@@ -224,6 +225,7 @@ The orchestrator manages git as a cross-cutting concern — individual agents do
 - Feature workflow: Create a branch `feature/{run-id}` from the current branch
 - Bugfix workflow: Create a branch `fix/{run-id}` from the current branch
 - Refactor workflow: Create a branch `refactor/{run-id}` from the current branch
+- Configure workflow: No branch — override files commit directly to the current branch
 
 **After implementation completes (post-review, post-test):**
 - Stage all changed/new files (excluding `.sdlc/`)

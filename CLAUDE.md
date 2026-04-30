@@ -2,7 +2,7 @@
 
 ## What This Is
 
-This is the SDLC Agent Framework -- a markdown-only orchestration system that drives software development workflows (greenfield, feature, bugfix) by spawning specialized AI agents through CLI harnesses like Claude Code or Codex. The orchestrator reads a workflow definition, executes steps by invoking agents with the right context, manages state/retries/checkpoints, and runs a retrospective for self-improvement after each run.
+This is the SDLC Agent Framework -- a markdown-only orchestration system that drives software development workflows (greenfield, feature, bugfix, refactor, configure) by spawning specialized AI agents through CLI harnesses like Claude Code or Codex. The orchestrator reads a workflow definition, executes steps by invoking agents with the right context, manages state/retries/checkpoints, and runs a retrospective for self-improvement after each run.
 
 ## Directory Structure
 
@@ -22,11 +22,15 @@ agents/                One file per agent role. Each defines purpose, inputs, ou
   tester.md            Test planning and execution
   documenter.md        Documentation and knowledge base
   retrospective.md     Post-run analysis and evolution proposals
+  configurator.md    Project configuration interview and override generation
 
 workflows/             Workflow definitions. Each file is a sequence of steps with
                        dependencies, forming a DAG the orchestrator executes.
   greenfield.md        New project from scratch
+  feature.md           Add feature to existing project
+  bugfix.md            Diagnose and fix bugs
   refactor.md          Codebase refactoring workflow
+  configure.md         Project-specific agent configuration
 
 templates/             Scaffolding copied into an app's .sdlc/ directory on init.
   framework_link.md    Config file pointing back to this framework directory

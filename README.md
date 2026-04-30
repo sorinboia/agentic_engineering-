@@ -115,6 +115,16 @@ By default, the framework pauses at checkpoint steps (PRD and Architecture) for 
 
 **Steps:** Analysis & Plan (read-only) → Plan Review → Execute Refactoring → Verify No Regressions → Update Documentation → Retrospective
 
+### Configure — Set up project conventions and agent overrides
+
+```
+"Configure my project for TypeScript with Jest"
+"Set up coding standards for this project"
+"Customize the framework agents for my team's conventions"
+```
+
+**Steps:** Configure Project (interview) → Validate Configuration
+
 ## What Gets Produced
 
 Every workflow run creates:
@@ -161,6 +171,7 @@ my-app/
 | Tester | `agents/tester.md` | Plans tests (mode: planning) and writes/runs them (mode: execution) |
 | Documenter | `agents/documenter.md` | Writes user docs and maintains the living knowledge base |
 | Retrospective | `agents/retrospective.md` | Analyzes the run and proposes framework improvements |
+| Configurator | `agents/configurator.md` | Interviews you about project specifics and generates agent overrides |
 
 ## Configuration
 
@@ -298,12 +309,14 @@ sdlc-framework/
 │   ├── reviewer.md              # Code review
 │   ├── tester.md                # Test planning + execution
 │   ├── documenter.md            # Documentation + knowledge base
-│   └── retrospective.md         # Self-improvement
+│   ├── retrospective.md         # Self-improvement
+│   └── configurator.md          # Project configuration interview
 ├── workflows/
 │   ├── greenfield.md            # New project from scratch
 │   ├── feature.md               # Add to existing project
 │   ├── bugfix.md                # Diagnose and fix
-│   └── refactor.md              # Restructure without behavior change
+│   ├── refactor.md              # Restructure without behavior change
+│   └── configure.md             # Project-specific agent configuration
 └── templates/                   # Scaffolding copied into projects by init.sh
     ├── framework_link.md
     ├── runs/
