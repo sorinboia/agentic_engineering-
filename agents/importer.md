@@ -4,11 +4,12 @@
 
 Analyze an existing codebase from an external source directory and extract structured knowledge for the framework's knowledge base. This agent enables "onboarding" of projects that were built outside the framework — whether by humans, other AI tools, or a combination — so that future SDLC workflow runs (feature, bugfix, refactor) can operate with full project context.
 
-The importer operates in three modes, invoked sequentially by the import workflow:
+The importer operates in four modes, invoked sequentially by the import workflow:
 
 1. **Discovery** — lightweight scan: inventory what's in the source directory
-2. **Analysis** — deep read: extract architecture, requirements, conventions, and issues
-3. **Populate** — write: translate the analysis into the framework's knowledge base format
+2. **Copy** — copy source code into the project root so future workflows can operate on it
+3. **Analysis** — deep read: extract architecture, requirements, conventions, and issues
+4. **Populate** — write: translate the analysis into the framework's knowledge base format
 
 The source directory is read-only. The importer never modifies the source project.
 
@@ -26,13 +27,17 @@ The source directory is read-only. The importer never modifies the source projec
 
 1. **Inventory**: `artifacts/import/inventory.md`
 
+### Mode: Copy
+
+2. **Source code** in the project root — the entire source tree (minus excluded directories) copied into the working directory
+
 ### Mode: Analysis
 
-2. **Analysis**: `artifacts/import/analysis.md`
+3. **Analysis**: `artifacts/import/analysis.md`
 
 ### Mode: Populate
 
-3. **Knowledge base files** (shared, outside run directory):
+4. **Knowledge base files** (shared, outside run directory):
    - `knowledge/overview.md`
    - `knowledge/architecture.md`
    - `knowledge/conventions.md`
@@ -195,55 +200,81 @@ status: final
 
 10. **Write `artifacts/import/inventory.md`** following the output format above.
 
+### Mode: Copy
+
+11. **Read the inventory** from `artifacts/import/inventory.md` to understand what's in the source directory.
+
+12. **Copy the source tree into the project root.** Use `rsync` or equivalent to copy the source directory contents into the current working directory (the directory containing `.sdlc/`). Exclude:
+    - Version control: `.git/`
+    - Dependency caches: `node_modules/`, `venv/`, `.venv/`, `__pycache__/`, `.tox/`, `vendor/` (Go), `target/` (Rust/Java)
+    - Build output: `dist/`, `build/`, `out/`, `.next/`, `.nuxt/`, `coverage/`
+    - IDE/editor: `.idea/`, `.vscode/`, `*.swp`, `*.swo`
+    - OS files: `.DS_Store`, `Thumbs.db`
+    - Any existing `.sdlc/` in the source (to avoid overwriting the framework setup)
+
+    The exact command:
+    ```bash
+    rsync -a --exclude='.git/' --exclude='node_modules/' --exclude='venv/' --exclude='.venv/' --exclude='__pycache__/' --exclude='.tox/' --exclude='vendor/' --exclude='target/' --exclude='dist/' --exclude='build/' --exclude='out/' --exclude='.next/' --exclude='.nuxt/' --exclude='coverage/' --exclude='.idea/' --exclude='.vscode/' --exclude='.DS_Store' --exclude='Thumbs.db' --exclude='.sdlc/' {source-path}/ ./
+    ```
+
+    **Important:** The trailing `/` on the source path means "copy the contents of this directory," not the directory itself. This preserves the source's directory structure at the project root level.
+
+13. **Verify the copy.** List the top-level files and directories now present in the project root. Compare against the inventory to confirm nothing important was missed and nothing unexpected was added.
+
+14. **Report what was copied.** Summarize: how many files, total size, what top-level directories appeared, and what was excluded. This is presented to the user at the checkpoint.
+
 ### Mode: Analysis
 
-11. **Read the inventory** from `artifacts/import/inventory.md` to understand the project structure before deep reading.
+15. **Read the inventory** from `artifacts/import/inventory.md` to understand the project structure before deep reading.
 
-12. **Deep-read source files.** Read the main entry points, then follow imports/dependencies outward to understand the architecture. Prioritize: entry points → core business logic → data models → API handlers → utilities → tests.
+16. **Deep-read source files.** Read the main entry points, then follow imports/dependencies outward to understand the architecture. Prioritize: entry points → core business logic → data models → API handlers → utilities → tests.
 
-13. **Extract architecture.** Identify component boundaries (modules, packages, services), their responsibilities, and how they interact. Map the data flow through the system.
+17. **Extract architecture.** Identify component boundaries (modules, packages, services), their responsibilities, and how they interact. Map the data flow through the system.
 
-14. **Reverse-engineer requirements.** Determine what the product does by examining: README/docs (if present), test descriptions and assertions, UI components and routes, API endpoints and their handlers, database schema and migrations. Frame requirements as "the system does X for Y users" — not as code descriptions.
+18. **Reverse-engineer requirements.** Determine what the product does by examining: README/docs (if present), test descriptions and assertions, UI components and routes, API endpoints and their handlers, database schema and migrations. Frame requirements as "the system does X for Y users" — not as code descriptions.
 
-15. **Extract conventions.** Observe actual patterns in the code: naming conventions, file organization, error handling patterns, testing strategies, code style. Report what IS, not what should be.
+19. **Extract conventions.** Observe actual patterns in the code: naming conventions, file organization, error handling patterns, testing strategies, code style. Report what IS, not what should be.
 
-16. **Catalog known issues.** Grep for `TODO`, `FIXME`, `HACK`, `XXX`, `WORKAROUND`. Also note: outdated dependencies, missing test coverage for critical paths, inconsistent patterns, dead code.
+20. **Catalog known issues.** Grep for `TODO`, `FIXME`, `HACK`, `XXX`, `WORKAROUND`. Also note: outdated dependencies, missing test coverage for critical paths, inconsistent patterns, dead code.
 
-17. **Write `artifacts/import/analysis.md`** following the output format above. Every claim must be grounded in specific files or code — no speculation.
+21. **Write `artifacts/import/analysis.md`** following the output format above. Every claim must be grounded in specific files or code — no speculation.
 
 ### Mode: Populate
 
-18. **Read the analysis** from `artifacts/import/analysis.md`.
+22. **Read the analysis** from `artifacts/import/analysis.md`.
 
-19. **Check existing knowledge files.** Before writing each knowledge file, read its current content. If it contains only template placeholders (HTML comments like `<!-- Updated by... -->`), replace it entirely. If it contains real project-specific content from a prior import or manual edits, merge the new information — append new sections, update outdated sections, never silently delete existing content.
+23. **Check existing knowledge files.** Before writing each knowledge file, read its current content. If it contains only template placeholders (HTML comments like `<!-- Updated by... -->`), replace it entirely. If it contains real project-specific content from a prior import or manual edits, merge the new information — append new sections, update outdated sections, never silently delete existing content.
 
-20. **Write `knowledge/overview.md`.** Populate all six sections (What This Project Does, Who It's For, Tech Stack Summary, Entry Points, Key Features, Current Status) from the analysis.
+24. **Write `knowledge/overview.md`.** Populate all six sections (What This Project Does, Who It's For, Tech Stack Summary, Entry Points, Key Features, Current Status) from the analysis.
 
-21. **Write `knowledge/architecture.md`.** Populate the four sections (System Overview, Tech Stack, Component Map, Data Flow) from the architecture analysis.
+25. **Write `knowledge/architecture.md`.** Populate the four sections (System Overview, Tech Stack, Component Map, Data Flow) from the architecture analysis.
 
-22. **Write `knowledge/conventions.md`.** Populate all four sections (Code Style, Patterns, Error Handling, Testing) from the conventions analysis.
+26. **Write `knowledge/conventions.md`.** Populate all four sections (Code Style, Patterns, Error Handling, Testing) from the conventions analysis. Each pattern entry must include at least one `file:line` reference grounding it in the source code (e.g., "`guardrails_common.tcl:34`, `class_json_lookup`").
 
-23. **Write `knowledge/known-issues.md`.** Populate from the known issues and tech debt analysis. Distinguish active issues from tech debt from workarounds.
+27. **Write `knowledge/known-issues.md`.** Populate from the known issues and tech debt analysis. Distinguish active issues from tech debt from workarounds.
 
-24. **Write component files.** For each major component identified in the analysis, write `knowledge/components/{component-name}.md` with the standard five sections (Purpose, Public API / Interface, Internal Structure, Dependencies, Known Issues / Limitations).
+28. **Write component files.** For each major component identified in the analysis, write `knowledge/components/{component-name}.md` with the standard five sections (Purpose, Public API / Interface, Internal Structure, Dependencies, Known Issues / Limitations).
 
-25. **Write product documentation.** Write `knowledge/product/index.md` with the features table. For each feature area, write `knowledge/product/{feature-slug}.md` with: overview, requirements (reverse-engineered), user stories (inferred from code), constraints, and current status.
+29. **Write product documentation.** Write `knowledge/product/index.md` with the features table. For each feature area, write `knowledge/product/{feature-slug}.md` with: overview, requirements (reverse-engineered), user stories (inferred from code), constraints, and current status.
 
-26. **Prepend a changelog entry** to `knowledge/changelog.md`:
+30. **Prepend a changelog entry** to `knowledge/changelog.md`:
     ```markdown
     ## {run-id} — {YYYY-MM-DD}
     **Workflow**: import
     **Request**: {user's original request, one line}
     **Changes**:
-    - Imported project knowledge from {source-path}
+    - Imported source code from {source-path}
     - Populated: overview, architecture, conventions, known-issues, {N} components, {N} features
     **Source**: {source-path}
     ```
 
-27. **If retrying with feedback:** Read the feedback carefully. Common issues: incomplete feature extraction, inaccurate architecture description, missed conventions, wrong component boundaries. Re-read the relevant source files to address the feedback. Update only the knowledge files that need correction — do not rewrite everything.
+31. **If retrying with feedback:** Read the feedback carefully. Common issues: incomplete feature extraction, inaccurate architecture description, missed conventions, wrong component boundaries. Re-read the relevant source files to address the feedback. Update only the knowledge files that need correction — do not rewrite everything.
 
 ## Quality Criteria
 
+- Source code is copied completely — all source files, configs, tests, and documentation are present in the project root
+- Generated/cached content is excluded from the copy — no `node_modules/`, `.git/`, `venv/`, build output, or IDE files
+- The existing `.sdlc/` directory is never overwritten by the copy
 - The inventory covers ALL languages, frameworks, and build tools present in the source — nothing silently skipped
 - The architecture extraction identifies real component boundaries as they exist in the code, not idealized boundaries
 - Reverse-engineered requirements capture ALL user-facing features, not just the obvious ones — examine tests, routes, and UI for features the README may not mention

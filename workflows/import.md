@@ -6,6 +6,7 @@ All artifact paths in this workflow are relative to the run directory: `.sdlc/ru
 For example, `artifacts/import/inventory.md` resolves to `.sdlc/runs/{run-id}/artifacts/import/inventory.md`.
 The knowledge base (`knowledge/`) is shared across runs and lives at `.sdlc/knowledge/`.
 The source directory is an external path provided by the user — it is read-only and never modified.
+Source code is copied into the project root (the directory containing `.sdlc/`) so future workflows can operate on it.
 
 ## Trigger
 
@@ -33,12 +34,25 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 
 ---
 
-### Step 2: Analysis
+### Step 2: Code Import
+
+- **ID**: code-import
+- **Agent**: importer (mode: copy)
+- **Depends on**: discovery
+- **Inputs**: `artifacts/import/inventory.md`, source directory path
+- **Outputs**: source code files in the project root
+- **Checkpoint**: true
+- **On failure**: escalate
+- **Description**: Copy the source code from the external directory into the project root, excluding version control directories (`.git/`), dependency caches (`node_modules/`, `venv/`, `.venv/`, `__pycache__/`), build output, and other generated content. Preserves the source project's directory structure. The user reviews what was copied before proceeding.
+
+---
+
+### Step 3: Analysis
 
 - **ID**: analysis
 - **Agent**: importer (mode: analysis)
-- **Depends on**: discovery
-- **Inputs**: `artifacts/import/inventory.md`, source directory path
+- **Depends on**: code-import
+- **Inputs**: `artifacts/import/inventory.md`, source code (now local in project root)
 - **Outputs**: `artifacts/import/analysis.md`
 - **Checkpoint**: false
 - **On failure**: retry(3), then escalate
@@ -46,7 +60,7 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 
 ---
 
-### Step 3: Knowledge Population
+### Step 4: Knowledge Population
 
 - **ID**: knowledge-population
 - **Agent**: importer (mode: populate)
@@ -59,7 +73,7 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 
 ---
 
-### Step 4: Retrospective
+### Step 5: Retrospective
 
 - **ID**: retrospective
 - **Agent**: retrospective
@@ -77,11 +91,13 @@ Any step can be skipped if its expected output artifacts already exist in the ru
 ```
 Step 1 (Discovery) ──── [checkpoint]
     │
-Step 2 (Analysis)
+Step 2 (Code Import) ──── [checkpoint]
     │
-Step 3 (Knowledge Population) ──── [checkpoint]
+Step 3 (Analysis)
     │
-Step 4 (Retrospective) ──── [checkpoint if proposals]
+Step 4 (Knowledge Population) ──── [checkpoint]
+    │
+Step 5 (Retrospective) ──── [checkpoint if proposals]
 ```
 
 ## Feedback Loops
@@ -95,5 +111,6 @@ Total retries cannot exceed the `max_retries_per_step` setting.
 Git is handled by the orchestrator, not by individual agents:
 
 - **Before Step 1**: Create a branch `import/{run-id}` from the current branch
-- **After Step 3 (Knowledge population approved)**: Stage and commit knowledge base files: `"chore: import project knowledge from {source-path}"`
-- **After Step 4 (Retrospective, if proposals approved)**: Stage and commit evolution artifacts: `"docs: retrospective for import run {run-id}"`
+- **After Step 2 (Code import approved)**: Stage and commit imported source code: `"feat: import source code from {source-path}"`
+- **After Step 4 (Knowledge population approved)**: Stage and commit knowledge base files: `"chore: import project knowledge from {source-path}"`
+- **After Step 5 (Retrospective, if proposals approved)**: Stage and commit evolution artifacts: `"docs: retrospective for import run {run-id}"`

@@ -133,7 +133,7 @@ By default, the framework pauses at checkpoint steps (PRD and Architecture) for 
 "Bring in the existing project so I can continue with the framework"
 ```
 
-**Steps:** Discovery (scan source) → Analysis (extract architecture, requirements, conventions) → Knowledge Population (write to knowledge base) → Retrospective
+**Steps:** Discovery (scan source) → Code Import (copy source into project) → Analysis (extract architecture, requirements, conventions) → Knowledge Population (write to knowledge base) → Retrospective
 
 ## What Gets Produced
 

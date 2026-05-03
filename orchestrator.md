@@ -234,7 +234,7 @@ The orchestrator manages git as a cross-cutting concern — individual agents do
 - Commit with a message summarizing the workflow: `"{workflow}: {brief description from PRD/spec}"`
 - Greenfield: this is the initial commit
 - Feature/bugfix/refactor: this commits on the feature branch
-- Import: no source code commit (source is read-only). After knowledge population, stage and commit knowledge base files: `"chore: import project knowledge from {source-path}"`
+- Import: after code import, stage and commit the imported source code: `"feat: import source code from {source-path}"`. After knowledge population, stage and commit knowledge base files: `"chore: import project knowledge from {source-path}"`
 
 **After the full workflow completes (post-documentation):**
 - Stage and commit any documentation or knowledge base changes separately: `"docs: update documentation and knowledge base"`
